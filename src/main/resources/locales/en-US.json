@@ -1,0 +1,12 @@
+{
+  "msg": {
+    "200": "handle success",
+    "400": "handle fail"
+  },
+  "mail": {
+    "verifyCode": {
+      "title": "verificationCode",
+      "content": "sss"
+    }
+  }
+}

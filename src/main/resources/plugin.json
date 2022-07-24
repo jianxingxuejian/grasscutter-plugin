@@ -1,0 +1,9 @@
+{
+  "name": "grasscutter-plugin",
+  "description": "a plugin for grasscutter-tools to connect server",
+  "version": "1.0.0",
+  "mainClass": "org.hff.MyPlugin",
+  "authors": [
+    "null"
+  ]
+}
