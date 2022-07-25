@@ -44,7 +44,11 @@ public class JwtUtil {
                 .compact();
     }
 
-    public static Claims parseToken(@NotNull String token, @NotNull Locale locale, @NotNull Response response) {
+    public static Claims parseToken(String token, @NotNull Locale locale, @NotNull Response response) {
+        if (token == null) {
+            response.json(ApiResult.result(ApiCode.AUTH_FAIL, locale));
+            return null;
+        }
         try {
             return Jwts.parserBuilder()
                     .setSigningKey(getKey())
@@ -52,12 +56,11 @@ public class JwtUtil {
                     .parseClaimsJws(token)
                     .getBody();
         } catch (ExpiredJwtException e) {
-            response.json(ApiResult.result(ApiCode.JWT_EXPIRED, locale));
-            return null;
+            response.json(ApiResult.result(ApiCode.TOKEN_EXPIRED, locale));
         } catch (Exception e) {
-            response.json(ApiResult.result(ApiCode.JWT_PARSE_EXCEPTION, locale));
-            return null;
+            response.json(ApiResult.result(ApiCode.TOKEN_PARSE_EXCEPTION, locale));
         }
+        return null;
     }
 
     public static String generateSecret() {

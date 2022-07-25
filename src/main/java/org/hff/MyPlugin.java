@@ -13,7 +13,7 @@ import java.io.IOException;
 import static org.hff.utils.AuthUtil.generateAdminVoucher;
 import static org.hff.utils.JwtUtil.generateSecret;
 
-public class MyPlugin extends Plugin {
+public final class MyPlugin extends Plugin {
 
     private static File configFile;
     public static Config config;

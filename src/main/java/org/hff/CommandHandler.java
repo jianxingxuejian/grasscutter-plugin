@@ -7,11 +7,13 @@ import emu.grasscutter.game.mail.Mail;
 import emu.grasscutter.game.player.Player;
 import express.http.Request;
 import express.http.Response;
+import io.jsonwebtoken.Claims;
 import org.hff.api.ApiCode;
 import org.hff.api.ApiResult;
 import org.hff.api.param.AdminAuthParam;
 import org.hff.api.param.AdminCommandParam;
 import org.hff.api.param.MailVerifyCodeParam;
+import org.hff.api.param.PlayerAuthParam;
 import org.hff.api.vo.TokenVo;
 import org.hff.i18n.LanguageManager;
 import org.hff.i18n.Locale;
@@ -30,9 +32,9 @@ public class CommandHandler {
 
     public static void adminAuth(Request request, Response response) {
         Locale locale = getLocale(request);
-        AdminAuthParam param = request.body(AdminAuthParam.class);
 
-        if (checkFail(param, locale, response)) {
+        AdminAuthParam param = request.body(AdminAuthParam.class);
+        if (checkParamFail(param, locale, response)) {
             return;
         }
 
@@ -47,23 +49,20 @@ public class CommandHandler {
     }
 
     public static void adminCommand(Request request, Response response) {
-        getLogger().info("adminCommand");
-        String token = request.get("token");
+        String token = getToken(request, response);
+        if (token == null) {
+            return;
+        }
+
         Locale locale = getLocale(request);
 
-//        Claims claims = JwtUtil.parseToken(token, locale, response);
-//        if (claims == null) {
-//            return;
-//        }
-//
-//        RoleEnum role = claims.get("role", RoleEnum.class);
-//        if (role != RoleEnum.ADMIN) {
-//            response.json(ApiResult.result(ApiCode.NOT_ROLE, locale));
-//            return;
-//        }
+        Claims claims = JwtUtil.parseToken(token, locale, response);
+        if (claims == null || checkAdminFail(claims, locale, response)) {
+            return;
+        }
 
         AdminCommandParam param = request.body(AdminCommandParam.class);
-        if (checkFail(param, locale, response)) {
+        if (checkParamFail(param, locale, response)) {
             return;
         }
 
@@ -81,7 +80,7 @@ public class CommandHandler {
         Locale locale = getLocale(request);
         MailVerifyCodeParam param = request.body(MailVerifyCodeParam.class);
 
-        if (checkFail(param, locale, response)) {
+        if (checkParamFail(param, locale, response)) {
             return;
         }
 
@@ -97,14 +96,31 @@ public class CommandHandler {
             response.json(ApiResult.result(ApiCode.PLAYER_NOT_ONLINE, locale));
             return;
         }
-        Mail mail = MailUtil.generateVerifyCodeMail(locale);
-        player.sendMail(mail);
 
-        response.json(ApiResult.success(LanguageManager.getMail(locale, "verifyCode.success")));
+        boolean flag = MailUtil.sendVerifyCodeMail(player, username, locale, response);
+        if (!flag) {
+            return;
+        }
+
+        response.json(ApiResult.success(locale));
     }
 
     public static void playerAuth(Request request, Response response) {
+        Locale locale = getLocale(request);
 
+        PlayerAuthParam param = request.body(PlayerAuthParam.class);
+        if (checkParamFail(param, locale, response)) {
+            return;
+        }
+
+        boolean flag = MailUtil.checkVerifyCode(param.getUsername(), param.getVerifyCode(), locale, response);
+        if (!flag) {
+            return;
+        }
+
+        String token = JwtUtil.generateToken(param.getUsername(), RoleEnum.PLAYER);
+        TokenVo tokenVo = new TokenVo(token);
+        response.json(ApiResult.success(locale, tokenVo));
     }
 
     public static void playerCommand(Request request, Response response) {
@@ -116,7 +132,16 @@ public class CommandHandler {
         return LanguageManager.getLocale(locale);
     }
 
-    private static boolean checkFail(Object param, Locale locale, Response response) {
+    private static String getToken(Request request, Response response) {
+        String token = request.get("token");
+        if (token == null) {
+            response.json(ApiResult.result(ApiCode.TOKEN_NOT_FOUND, getLocale(request)));
+            return null;
+        }
+        return token;
+    }
+
+    private static boolean checkParamFail(Object param, Locale locale, Response response) {
         for (Field field : param.getClass().getDeclaredFields()) {
             field.setAccessible(true);
             try {
@@ -129,6 +154,15 @@ public class CommandHandler {
                 response.json(ApiResult.result(ApiCode.PARAM_ILLEGAL_EXCEPTION, locale));
                 return true;
             }
+        }
+        return false;
+    }
+
+    private static boolean checkAdminFail(Claims claims, Locale locale, Response response) {
+        RoleEnum role = claims.get("role", RoleEnum.class);
+        if (role != RoleEnum.ADMIN) {
+            response.json(ApiResult.result(ApiCode.ROLE_ERROR, locale));
+            return true;
         }
         return false;
     }
