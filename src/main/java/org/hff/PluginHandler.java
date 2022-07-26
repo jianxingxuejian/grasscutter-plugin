@@ -4,7 +4,6 @@ import emu.grasscutter.command.CommandMap;
 import emu.grasscutter.database.DatabaseHelper;
 import emu.grasscutter.game.Account;
 import emu.grasscutter.game.player.Player;
-import emu.grasscutter.utils.MessageHandler;
 import express.http.Request;
 import express.http.Response;
 import io.jsonwebtoken.Claims;
@@ -19,6 +18,7 @@ import org.hff.permission.RoleEnum;
 import org.hff.utils.AuthUtil;
 import org.hff.utils.JwtUtil;
 import org.hff.utils.MailUtil;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 
@@ -31,7 +31,7 @@ public final class PluginHandler {
     private final Locale locale;
     private final String token;
 
-    public PluginHandler(Request request, Response response) {
+    public PluginHandler(@NotNull Request request, @NotNull Response response) {
         this.request = request;
         this.response = response;
         this.locale = LanguageManager.getLocale(request.get("locale"));
@@ -53,7 +53,7 @@ public final class PluginHandler {
             return;
         }
 
-        String token = JwtUtil.generateToken("admin", RoleEnum.ADMIN);
+        String token = JwtUtil.generateToken(RoleEnum.ADMIN, "", 0);
         TokenVo tokenVo = new TokenVo(token);
         response.json(ApiResult.result(ApiCode.SUCCESS, locale, tokenVo));
     }
@@ -74,15 +74,16 @@ public final class PluginHandler {
         }
 
         try {
-            var handler = new MessageHandler();
             CommandMap.getInstance().invoke(null, null, param.getCommand());
-            handler.getMessage();
+            String message = EventListeners.getMessage(null);
+            if (message != null) {
+                response.json(ApiResult.success(message));
+            } else {
+                response.json(ApiResult.success(locale));
+            }
         } catch (Exception e) {
             response.json(ApiResult.fail(locale));
-            return;
         }
-
-        response.json(ApiResult.success(locale));
     }
 
     public void mailVerifyCode() {
@@ -128,7 +129,9 @@ public final class PluginHandler {
             return;
         }
 
-        String token = JwtUtil.generateToken(param.getUsername(), RoleEnum.PLAYER);
+        String username = param.getUsername();
+        Account account = DatabaseHelper.getAccountByName(username);
+        String token = JwtUtil.generateToken( RoleEnum.PLAYER,username,account.getReservedPlayerUid());
         TokenVo tokenVo = new TokenVo(token);
         response.json(ApiResult.success(locale, tokenVo));
     }

@@ -21,12 +21,20 @@ public final class ApiResult {
         return result(ApiCode.SUCCESS, locale);
     }
 
+    public static ApiResult success(String msg) {
+        return result(ApiCode.SUCCESS, msg);
+    }
+
     public static ApiResult success(Locale locale, Object data) {
         return result(ApiCode.SUCCESS, locale, data);
     }
 
     public static ApiResult fail(Locale locale) {
         return result(ApiCode.FAIL, locale);
+    }
+
+    public static ApiResult fail(String msg) {
+        return result(ApiCode.FAIL, msg);
     }
 
     public static ApiResult fail(Locale locale, Object data) {

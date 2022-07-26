@@ -1,15 +1,13 @@
 package org.hff.utils;
 
-import express.http.Response;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.io.Encoders;
 import io.jsonwebtoken.security.Keys;
 import org.hff.Config;
 import org.hff.MyPlugin;
-import org.hff.api.ApiCode;
-import org.hff.api.ApiResult;
-import org.hff.i18n.Locale;
 import org.hff.permission.RoleEnum;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,7 +21,7 @@ public class JwtUtil {
 
     private static final Config config = MyPlugin.getInstance().getConfig();
 
-    public static String generateToken(@NotNull String username, @NotNull RoleEnum role) {
+    public static String generateToken(@NotNull RoleEnum role, @NotNull String username, long uid) {
         long jwtExpire = config.getJwtExpire();
 
         long nowMillis = System.currentTimeMillis();
@@ -31,8 +29,9 @@ public class JwtUtil {
         Date expireDate = new Date(nowMillis + jwtExpire);
 
         Map<String, Object> claims = new HashMap<>();
-        claims.put("username", username);
         claims.put("role", role);
+        claims.put("username", username);
+        claims.put("uid", uid);
 
         return Jwts.builder()
                 .setIssuer("grasscutter-plugin")

@@ -14,4 +14,8 @@ public final class EventListeners {
             message.put(event.getPlayer().getUid(), event.getMessage());
         }
     }
+
+    public static String getMessage(Integer uid) {
+        return message.get(uid);
+    }
 }
