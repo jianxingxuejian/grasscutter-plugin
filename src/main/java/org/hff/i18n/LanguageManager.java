@@ -7,7 +7,7 @@ import org.hff.api.ApiCode;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class LanguageManager {
+public final class LanguageManager {
 
     private static final Map<Locale, Language> languageMap = new ConcurrentHashMap<>();
 

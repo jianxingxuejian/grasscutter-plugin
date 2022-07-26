@@ -9,7 +9,7 @@ import lombok.experimental.Accessors;
 @Setter
 @ToString
 @Accessors(chain = true)
-public class Config {
+public final class Config {
 
     private String adminVoucher;
 

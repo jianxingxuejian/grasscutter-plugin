@@ -24,19 +24,14 @@ public class MailUtil {
 
     private static final Map<String, VerifyCodeMail> verifyCodeMailMap = new ConcurrentHashMap<>();
 
-    public static boolean sendVerifyCodeMail(Player player, String username, Locale locale, Response response) {
+    public static boolean sendVerifyCodeMail(Player player, String username, Locale locale) {
         var mail = new Mail();
         mail.mailContent.sender = "grasscutter-plugin";
         mail.mailContent.title = LanguageManager.getMail(locale, "verifyCode.title");
         String verifyCode = Util.getRandomNum(6);
         mail.mailContent.content = LanguageManager.getMail(locale, "verifyCode.content").formatted(verifyCode);
 
-        try {
-            player.sendMail(mail);
-        } catch (Exception e) {
-            response.json(ApiResult.result(ApiCode.MAIL_SEND_FAIL, locale));
-            return false;
-        }
+        player.sendMail(mail);
 
         VerifyCodeMail verifyCodeMail = new VerifyCodeMail(verifyCode, System.currentTimeMillis() + 1000 * 60);
         verifyCodeMailMap.put(username, verifyCodeMail);

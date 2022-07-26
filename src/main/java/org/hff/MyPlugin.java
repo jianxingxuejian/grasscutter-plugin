@@ -3,6 +3,9 @@ package org.hff;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import emu.grasscutter.plugin.Plugin;
+import emu.grasscutter.server.event.EventHandler;
+import emu.grasscutter.server.event.HandlerPriority;
+import emu.grasscutter.server.event.game.ReceiveCommandFeedbackEvent;
 import org.hff.i18n.LanguageManager;
 
 import java.io.File;
@@ -15,18 +18,26 @@ import static org.hff.utils.JwtUtil.generateSecret;
 
 public final class MyPlugin extends Plugin {
 
-    private static File configFile;
-    public static Config config;
+    private static MyPlugin instance;
+
+    private File configFile;
+    private Config config;
+
     public static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     @Override
     public void onLoad() {
+        instance = this;
         loadConfigFile();
         getLogger().info("grasscutter-plugin loaded");
     }
 
     @Override
     public void onEnable() {
+        new EventHandler<>(ReceiveCommandFeedbackEvent.class)
+                .priority(HandlerPriority.HIGH)
+                .listener(EventListeners::onCommandSend)
+                .register(this);
         LanguageManager.register();
         getHandle().addRouter(PluginRouter.class);
         getLogger().info("grasscutter-plugin enabled");
@@ -59,15 +70,19 @@ public final class MyPlugin extends Plugin {
         }
     }
 
+    public static MyPlugin getInstance() {
+        return instance;
+    }
+
+    public Config getConfig() {
+        return config;
+    }
+
     public void saveConfigFile() {
         try (var writer = new FileWriter(configFile)) {
             gson.toJson(config, writer);
         } catch (IOException e) {
             getLogger().error("Error while saving config file", e);
         }
-    }
-
-    public Config getConfig() {
-        return config;
     }
 }

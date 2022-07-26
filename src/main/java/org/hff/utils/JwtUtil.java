@@ -21,7 +21,7 @@ import java.util.Map;
 
 public class JwtUtil {
 
-    private static final Config config = MyPlugin.config;
+    private static final Config config = MyPlugin.getInstance().getConfig();
 
     public static String generateToken(@NotNull String username, @NotNull RoleEnum role) {
         long jwtExpire = config.getJwtExpire();
@@ -44,23 +44,12 @@ public class JwtUtil {
                 .compact();
     }
 
-    public static Claims parseToken(String token, @NotNull Locale locale, @NotNull Response response) {
-        if (token == null) {
-            response.json(ApiResult.result(ApiCode.AUTH_FAIL, locale));
-            return null;
-        }
-        try {
-            return Jwts.parserBuilder()
-                    .setSigningKey(getKey())
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
-        } catch (ExpiredJwtException e) {
-            response.json(ApiResult.result(ApiCode.TOKEN_EXPIRED, locale));
-        } catch (Exception e) {
-            response.json(ApiResult.result(ApiCode.TOKEN_PARSE_EXCEPTION, locale));
-        }
-        return null;
+    public static Claims parseToken(@NotNull String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     public static String generateSecret() {
