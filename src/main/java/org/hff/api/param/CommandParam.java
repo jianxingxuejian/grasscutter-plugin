@@ -5,9 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PlayerCommandParam {
-
-    private String username;
+public class CommandParam {
 
     private String command;
 

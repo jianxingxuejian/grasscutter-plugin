@@ -10,13 +10,22 @@ public final class PluginRouter implements Router {
     public void applyRoutes(Express express, Javalin javalin) {
         express.get("/plugin/admin/auth",
                 (request, response) -> new PluginHandler(request, response).adminAuth());
+
+        express.get("/plugin/admin/createAccount",
+                (request, response) -> new PluginHandler(request, response).adminCreateAccount());
+
         express.get("/plugin/admin/command",
                 (request, response) -> new PluginHandler(request, response).adminCommand());
-//        express.get("/plugin/admin/createAccount", CommandHandler::adminCreateAccount);
+
         express.get("/plugin/mail/verifyCode",
                 (request, response) -> new PluginHandler(request, response).mailVerifyCode());
-        express.get("/plugin/player/auth",
-                (request, response) -> new PluginHandler(request, response).playerAuth());
+
+        express.get("/plugin/player/authByVerifyCode",
+                (request, response) -> new PluginHandler(request, response).playerAuthByVerifyCode());
+
+        express.get("/plugin/player/authByPassword",
+                (request, response) -> new PluginHandler(request, response).playerAuthByPassword());
+
         express.get("/plugin/player/command",
                 (request, response) -> new PluginHandler(request, response).playerCommand());
     }

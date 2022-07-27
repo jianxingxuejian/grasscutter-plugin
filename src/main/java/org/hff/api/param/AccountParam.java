@@ -5,10 +5,9 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PlayerAuthParam {
+public class AccountParam {
 
     private String username;
 
-    private String verifyCode;
-
+    private String password;
 }

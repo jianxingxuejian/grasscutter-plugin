@@ -7,15 +7,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class EventListeners {
 
-    private static final Map<Integer, String> message = new ConcurrentHashMap<>();
+    private static final Map<String, String> messages = new ConcurrentHashMap<>();
 
     public static void onCommandSend(ReceiveCommandFeedbackEvent event) {
         if (event.getPlayer() != null) {
-            message.put(event.getPlayer().getUid(), event.getMessage());
+            messages.put(event.getPlayer().getAccount().getId(), event.getMessage());
         }
     }
 
-    public static String getMessage(Integer uid) {
-        return message.get(uid);
+    public static String getMessage(String uid) {
+        return messages.get(uid);
     }
 }

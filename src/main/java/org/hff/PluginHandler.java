@@ -53,9 +53,18 @@ public final class PluginHandler {
             return;
         }
 
-        String token = JwtUtil.generateToken(RoleEnum.ADMIN, "", 0);
+        String token = JwtUtil.generateToken(RoleEnum.ADMIN, "0", "admin");
         TokenVo tokenVo = new TokenVo(token);
         response.json(ApiResult.result(ApiCode.SUCCESS, locale, tokenVo));
+    }
+
+    public void adminCreateAccount(){
+        AccountParam param = request.body(AccountParam.class);
+        if (checkParamFail(param)) {
+            return;
+        }
+
+        response.json(ApiResult.result(ApiCode.SUCCESS, locale));
     }
 
     public void adminCommand() {
@@ -68,22 +77,12 @@ public final class PluginHandler {
             return;
         }
 
-        AdminCommandParam param = request.body(AdminCommandParam.class);
+        CommandParam param = request.body(CommandParam.class);
         if (checkParamFail(param)) {
             return;
         }
 
-        try {
-            CommandMap.getInstance().invoke(null, null, param.getCommand());
-            String message = EventListeners.getMessage(null);
-            if (message != null) {
-                response.json(ApiResult.success(message));
-            } else {
-                response.json(ApiResult.success(locale));
-            }
-        } catch (Exception e) {
-            response.json(ApiResult.fail(locale));
-        }
+        invokeCommand(null, param.getCommand(), claims.get("uid").toString());
     }
 
     public void mailVerifyCode() {
@@ -92,21 +91,13 @@ public final class PluginHandler {
             return;
         }
 
-        String username = param.getUsername();
-        Account account = DatabaseHelper.getAccountByName(username);
-        if (account == null) {
-            response.json(ApiResult.result(ApiCode.ACCOUNT_NOT_EXIST, locale));
-            return;
-        }
-
-        Player player = getGameServer().getPlayerByAccountId(account.getId());
+        Player player = getPlayerByUsername(param.getUsername());
         if (player == null) {
-            response.json(ApiResult.result(ApiCode.PLAYER_NOT_ONLINE, locale));
             return;
         }
 
         try {
-            boolean flag = MailUtil.sendVerifyCodeMail(player, username, locale);
+            boolean flag = MailUtil.sendVerifyCodeMail(player, param.getUsername(), locale);
             if (!flag) {
                 return;
             }
@@ -118,8 +109,8 @@ public final class PluginHandler {
         response.json(ApiResult.success(locale));
     }
 
-    public void playerAuth() {
-        PlayerAuthParam param = request.body(PlayerAuthParam.class);
+    public void playerAuthByVerifyCode() {
+        VerifyCodeAuthParam param = request.body(VerifyCodeAuthParam.class);
         if (checkParamFail(param)) {
             return;
         }
@@ -130,10 +121,21 @@ public final class PluginHandler {
         }
 
         String username = param.getUsername();
-        Account account = DatabaseHelper.getAccountByName(username);
-        String token = JwtUtil.generateToken( RoleEnum.PLAYER,username,account.getReservedPlayerUid());
+        Account account = getAccountByUsername(username);
+        if (account == null) {
+            return;
+        }
+
+        String token = JwtUtil.generateToken(RoleEnum.PLAYER, username, account.getId());
         TokenVo tokenVo = new TokenVo(token);
         response.json(ApiResult.success(locale, tokenVo));
+    }
+
+    public void playerAuthByPassword(){
+        AccountParam param = request.body(AccountParam.class);
+        if (checkParamFail(param)) {
+            return;
+        }
     }
 
     public void playerCommand() {
@@ -146,12 +148,17 @@ public final class PluginHandler {
             return;
         }
 
-        PlayerCommandParam param = request.body(PlayerCommandParam.class);
+        CommandParam param = request.body(CommandParam.class);
         if (checkParamFail(param)) {
             return;
         }
 
+        Player player = getPlayerByUid(claims.get("uid").toString());
+        if (player == null) {
+            return;
+        }
 
+        invokeCommand(player, param.getCommand(), claims.get("uid").toString());
     }
 
 
@@ -190,5 +197,47 @@ public final class PluginHandler {
             return true;
         }
         return false;
+    }
+
+    private Account getAccountByUsername(String username) {
+        Account account = DatabaseHelper.getAccountByName(username);
+        if (account == null) {
+            response.json(ApiResult.result(ApiCode.ACCOUNT_NOT_EXIST, locale));
+        }
+        return account;
+    }
+
+    private Player getPlayerByUid(String uid) {
+        Player player = getGameServer().getPlayerByAccountId(uid);
+        if (player == null) {
+            response.json(ApiResult.result(ApiCode.PLAYER_NOT_ONLINE, locale));
+        }
+        return player;
+    }
+
+    private Player getPlayerByUsername(String username) {
+        Account account = getAccountByUsername(username);
+        if (account == null) {
+            return null;
+        }
+        Player player = getPlayerByUid(account.getId());
+        if (player == null) {
+            response.json(ApiResult.result(ApiCode.PLAYER_NOT_ONLINE, locale));
+        }
+        return player;
+    }
+
+    private void invokeCommand(Player player, String command, String uid) {
+        try {
+            CommandMap.getInstance().invoke(player, player, command);
+            String message = EventListeners.getMessage(uid);
+            if (message != null) {
+                response.json(ApiResult.success(message));
+            } else {
+                response.json(ApiResult.success(locale));
+            }
+        } catch (Exception e) {
+            response.json(ApiResult.fail(locale));
+        }
     }
 }

@@ -21,7 +21,7 @@ public class JwtUtil {
 
     private static final Config config = MyPlugin.getInstance().getConfig();
 
-    public static String generateToken(@NotNull RoleEnum role, @NotNull String username, long uid) {
+    public static String generateToken(@NotNull RoleEnum role, @NotNull String uid, @NotNull String username) {
         long jwtExpire = config.getJwtExpire();
 
         long nowMillis = System.currentTimeMillis();
@@ -30,8 +30,8 @@ public class JwtUtil {
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
-        claims.put("username", username);
         claims.put("uid", uid);
+        claims.put("username", username);
 
         return Jwts.builder()
                 .setIssuer("grasscutter-plugin")
