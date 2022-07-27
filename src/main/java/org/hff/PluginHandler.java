@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Field;
 
 import static emu.grasscutter.Grasscutter.getGameServer;
+import static emu.grasscutter.Grasscutter.getLogger;
 
 public final class PluginHandler {
 
@@ -30,16 +31,14 @@ public final class PluginHandler {
     private final Response response;
     private final Locale locale;
     private final String token;
+    private final String adminToken;
 
     public PluginHandler(@NotNull Request request, @NotNull Response response) {
         this.request = request;
         this.response = response;
         this.locale = LanguageManager.getLocale(request.get("locale"));
         this.token = request.get("token");
-        if (token == null) {
-            response.json(ApiResult.result(ApiCode.TOKEN_NOT_FOUND, locale));
-        }
-
+        this.adminToken = request.get("adminToken");
     }
 
     public void adminAuth() {
@@ -53,14 +52,20 @@ public final class PluginHandler {
             return;
         }
 
-        String token = JwtUtil.generateToken(RoleEnum.ADMIN, "0", "admin");
+        String token = JwtUtil.generateToken(RoleEnum.ADMIN, "0");
         TokenVo tokenVo = new TokenVo(token);
         response.json(ApiResult.result(ApiCode.SUCCESS, locale, tokenVo));
     }
 
-    public void adminCreateAccount(){
+    public void adminCreateAccount() {
         AccountParam param = request.body(AccountParam.class);
         if (checkParamFail(param)) {
+            return;
+        }
+
+        Account account = DatabaseHelper.createAccountWithPassword(param.getUsername(), param.getPassword());
+        if (account == null) {
+            response.json(ApiResult.result(ApiCode.ACCOUNT_EXIST, locale));
             return;
         }
 
@@ -91,21 +96,13 @@ public final class PluginHandler {
             return;
         }
 
-        Player player = getPlayerByUsername(param.getUsername());
+        String uid = param.getUid();
+        Player player = getPlayerByUid(uid);
         if (player == null) {
             return;
         }
 
-        try {
-            boolean flag = MailUtil.sendVerifyCodeMail(player, param.getUsername(), locale);
-            if (!flag) {
-                return;
-            }
-        } catch (Exception e) {
-            response.json(ApiResult.result(ApiCode.MAIL_SEND_FAIL, locale));
-            return;
-        }
-
+        MailUtil.sendVerifyCodeMail(player, uid, locale);
         response.json(ApiResult.success(locale));
     }
 
@@ -126,12 +123,12 @@ public final class PluginHandler {
             return;
         }
 
-        String token = JwtUtil.generateToken(RoleEnum.PLAYER, username, account.getId());
+        String token = JwtUtil.generateToken(RoleEnum.PLAYER, account.getId(), username);
         TokenVo tokenVo = new TokenVo(token);
         response.json(ApiResult.success(locale, tokenVo));
     }
 
-    public void playerAuthByPassword(){
+    public void playerAuthByPassword() {
         AccountParam param = request.body(AccountParam.class);
         if (checkParamFail(param)) {
             return;
@@ -203,6 +200,8 @@ public final class PluginHandler {
         Account account = DatabaseHelper.getAccountByName(username);
         if (account == null) {
             response.json(ApiResult.result(ApiCode.ACCOUNT_NOT_EXIST, locale));
+        } else {
+            getLogger().info(account.getId());
         }
         return account;
     }
@@ -211,6 +210,8 @@ public final class PluginHandler {
         Player player = getGameServer().getPlayerByAccountId(uid);
         if (player == null) {
             response.json(ApiResult.result(ApiCode.PLAYER_NOT_ONLINE, locale));
+        } else {
+            getLogger().info(String.valueOf(player.getUid()));
         }
         return player;
     }

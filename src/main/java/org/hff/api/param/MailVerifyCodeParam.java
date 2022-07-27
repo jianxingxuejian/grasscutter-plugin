@@ -7,6 +7,6 @@ import lombok.Setter;
 @Setter
 public class MailVerifyCodeParam {
 
-    private String username;
+    private String uid;
 
 }

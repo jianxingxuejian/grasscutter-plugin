@@ -31,7 +31,7 @@ public enum ApiCode {
 
     MAIL_SEND_FAIL(2003),
 
-    MAIL_NOT_FOUND(2004),
+    MAIL_VERIFY_NOT_FOUND(2004),
 
     MAIL_VERIFY_EXPIRED(2005),
 

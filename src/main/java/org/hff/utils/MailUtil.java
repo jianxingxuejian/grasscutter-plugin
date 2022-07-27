@@ -17,7 +17,7 @@ public class MailUtil {
 
     private static final Map<String, VerifyCodeMail> verifyCodeMailMap = new ConcurrentHashMap<>();
 
-    public static boolean sendVerifyCodeMail(Player player, String username, Locale locale) {
+    public static void sendVerifyCodeMail(Player player, String uid, Locale locale) {
         var mail = new Mail();
         mail.mailContent.sender = "grasscutter-plugin";
         mail.mailContent.title = LanguageManager.getMail(locale, "verifyCode.title");
@@ -27,34 +27,33 @@ public class MailUtil {
         player.sendMail(mail);
 
         VerifyCodeMail verifyCodeMail = new VerifyCodeMail(verifyCode, System.currentTimeMillis() + 1000 * 60);
-        verifyCodeMailMap.put(username, verifyCodeMail);
-        return true;
+        verifyCodeMailMap.put(uid, verifyCodeMail);
     }
 
-    public static boolean checkVerifyCode(String username, String verifyCode, Locale locale, Response response) {
-        VerifyCodeMail verifyCodeMail = verifyCodeMailMap.get(username);
+    public static boolean checkVerifyCode(String uid, String verifyCode, Locale locale, Response response) {
+        VerifyCodeMail verifyCodeMail = verifyCodeMailMap.get(uid);
 
         if (verifyCodeMail == null) {
-            response.json(ApiResult.result(ApiCode.MAIL_NOT_FOUND, locale));
+            response.json(ApiResult.result(ApiCode.MAIL_VERIFY_NOT_FOUND, locale));
             return false;
         }
 
         if (verifyCodeMail.getExpireTime() < System.currentTimeMillis()) {
+            verifyCodeMailMap.remove(uid);
             response.json(ApiResult.result(ApiCode.MAIL_VERIFY_EXPIRED, locale));
             return false;
         }
 
-        int retries = verifyCodeMail.getRetries();
         if (!verifyCodeMail.getVerifyCode().equals(verifyCode)) {
-            if (retries >= 3) {
-                verifyCodeMailMap.remove(username);
+            if (verifyCodeMail.getRetries() <= 0) {
+                verifyCodeMailMap.remove(uid);
             }
-            verifyCodeMail.setRetries(retries++);
-            response.json(ApiResult.result(ApiCode.MAIL_VERIFY_FAIL, locale).setArgs(3 - retries));
+            verifyCodeMail.setRetries(verifyCodeMail.getRetries() - 1);
+            response.json(ApiResult.result(ApiCode.MAIL_VERIFY_FAIL, locale).setArgs(verifyCodeMail.getRetries()));
             return false;
         }
 
-        verifyCodeMailMap.remove(username);
+        verifyCodeMailMap.remove(uid);
         return true;
     }
 
@@ -63,7 +62,7 @@ public class MailUtil {
     static class VerifyCodeMail {
         private String verifyCode;
         private long expireTime;
-        private int Retries = 0;
+        private int Retries = 3;
 
         public VerifyCodeMail(String verifyCode, long expireTime) {
             this.verifyCode = verifyCode;
