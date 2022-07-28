@@ -16,6 +16,11 @@ public final class EventListeners {
     }
 
     public static String getMessage(String uid) {
-        return messages.get(uid);
+        String message = messages.get(uid);
+        if (message != null) {
+            messages.remove(uid);
+        }
+        return message;
     }
+
 }

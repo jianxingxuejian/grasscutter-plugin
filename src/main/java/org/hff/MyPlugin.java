@@ -60,13 +60,13 @@ public final class MyPlugin extends Plugin {
             } catch (IOException e) {
                 getLogger().error("Error while creating config file", e);
             }
-        }
-
-        try (var reader = new FileReader(configFile)) {
-            config = gson.fromJson(reader, Config.class);
-            getLogger().info(config.toString());
-        } catch (IOException e) {
-            getLogger().error("Error while reading config file", e);
+        } else {
+            try (var reader = new FileReader(configFile)) {
+                config = gson.fromJson(reader, Config.class);
+                getLogger().info(config.toString());
+            } catch (IOException e) {
+                getLogger().error("Error while reading config file", e);
+            }
         }
     }
 

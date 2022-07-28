@@ -5,8 +5,10 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class CommandParam {
+public class AuthByVerifyCodeParam {
 
-    private String command;
+    private String uid;
+
+    private String verifyCode;
 
 }

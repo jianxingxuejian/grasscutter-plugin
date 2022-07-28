@@ -5,8 +5,9 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class MailVerifyCodeParam {
+public class AuthByPasswordParam {
 
     private String uid;
 
+    private String password;
 }
