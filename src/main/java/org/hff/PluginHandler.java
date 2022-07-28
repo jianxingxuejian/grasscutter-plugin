@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Field;
 
 import static emu.grasscutter.Grasscutter.getGameServer;
+import static emu.grasscutter.Grasscutter.getLogger;
 
 public final class PluginHandler {
 
@@ -38,7 +39,7 @@ public final class PluginHandler {
         this.response = response;
         this.locale = LanguageManager.getLocale(request.get("locale"));
         this.token = request.get("token");
-        this.adminToken = request.get("adminToken");
+        this.adminToken = request.get("admin_token");
     }
 
     public void adminAuth() {
@@ -104,7 +105,12 @@ public final class PluginHandler {
             return;
         }
 
-        MailUtil.sendVerifyCodeMail(player, uid, locale);
+        boolean flag = MailUtil.sendVerifyCodeMail(player, uid, locale);
+        if (!flag) {
+            response.json(ApiResult.result(ApiCode.MAIL_TIME_LIMIT, locale));
+            return;
+        }
+
         response.json(ApiResult.success(locale));
     }
 
@@ -140,7 +146,7 @@ public final class PluginHandler {
             return;
         }
 
-        if (!account.getPassword().equals(param.getPassword())) {
+        if (!param.getPassword().equals(account.getPassword())) {
             response.json(ApiResult.result(ApiCode.AUTH_FAIL, locale));
             return;
         }
@@ -203,9 +209,15 @@ public final class PluginHandler {
     }
 
     private boolean checkAdminFail(Claims claims) {
-        RoleEnum role = claims.get("role", RoleEnum.class);
-        if (role != RoleEnum.ADMIN) {
-            response.json(ApiResult.result(ApiCode.ROLE_ERROR, locale));
+        getLogger().info("ssssssss");
+        try{
+            String role = claims.get("role").toString();
+            if (role != RoleEnum.ADMIN) {
+                response.json(ApiResult.result(ApiCode.ROLE_ERROR, locale));
+                return true;
+            }
+        }catch (Exception e){
+            getLogger().info(e.getMessage());
             return true;
         }
         return false;
@@ -232,6 +244,7 @@ public final class PluginHandler {
         CommandMap.getInstance().invoke(player, player, command);
         String message = EventListeners.getMessage(uid);
         if (message != null) {
+            getLogger().info(message);
             response.json(ApiResult.success(message));
         } else {
             response.json(ApiResult.fail(locale));

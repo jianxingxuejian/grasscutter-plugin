@@ -17,7 +17,11 @@ public class MailUtil {
 
     private static final Map<String, VerifyCodeMail> verifyCodeMailMap = new ConcurrentHashMap<>();
 
-    public static void sendVerifyCodeMail(Player player, String uid, Locale locale) {
+    public static boolean sendVerifyCodeMail(Player player, String uid, Locale locale) {
+        VerifyCodeMail oldMail = verifyCodeMailMap.get(uid);
+        if (oldMail != null && oldMail.getExpireTime() > System.currentTimeMillis()) {
+            return false;
+        }
         var mail = new Mail();
         mail.mailContent.sender = "grasscutter-plugin";
         mail.mailContent.title = LanguageManager.getMail(locale, "verifyCode.title");
@@ -28,6 +32,7 @@ public class MailUtil {
 
         VerifyCodeMail verifyCodeMail = new VerifyCodeMail(verifyCode, System.currentTimeMillis() + 1000 * 60);
         verifyCodeMailMap.put(uid, verifyCodeMail);
+        return true;
     }
 
     public static boolean checkVerifyCode(String uid, String verifyCode, Locale locale, Response response) {
@@ -45,10 +50,10 @@ public class MailUtil {
         }
 
         if (!verifyCodeMail.getVerifyCode().equals(verifyCode)) {
+            verifyCodeMail.setRetries(verifyCodeMail.getRetries() - 1);
             if (verifyCodeMail.getRetries() <= 0) {
                 verifyCodeMailMap.remove(uid);
             }
-            verifyCodeMail.setRetries(verifyCodeMail.getRetries() - 1);
             response.json(ApiResult.result(ApiCode.MAIL_VERIFY_FAIL, locale).setArgs(verifyCodeMail.getRetries()));
             return false;
         }

@@ -14,6 +14,6 @@ public class AuthUtil {
     }
 
     public static boolean checkAdminVoucher(String voucher) {
-        return config.getAdminVoucher().equals(generateAdminVoucher());
+        return config.getAdminVoucher().equals(voucher);
     }
 }

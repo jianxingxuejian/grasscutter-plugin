@@ -31,7 +31,7 @@ public enum ApiCode {
 
     PLAYER_NOT_ONLINE(2002),
 
-//    MAIL_SEND_FAIL(2003),
+    MAIL_TIME_LIMIT(2003),
 
     MAIL_VERIFY_NOT_FOUND(2004),
 
