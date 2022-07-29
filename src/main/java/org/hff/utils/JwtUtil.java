@@ -31,7 +31,7 @@ public class JwtUtil {
         Date expireDate = new Date(nowMillis + jwtExpire);
 
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", role);
+        claims.put("role", role.getDesc());
         claims.put("uid", uid);
 
        try{

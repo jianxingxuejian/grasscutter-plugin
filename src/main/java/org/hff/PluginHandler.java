@@ -80,7 +80,7 @@ public final class PluginHandler {
         }
 
         Claims claims = parseToken();
-        if (claims == null || checkAdminFail(claims)) {
+        if (claims == null || checkRoleFail(claims, RoleEnum.ADMIN)) {
             return;
         }
 
@@ -208,16 +208,9 @@ public final class PluginHandler {
         return null;
     }
 
-    private boolean checkAdminFail(Claims claims) {
-        getLogger().info("ssssssss");
-        try{
-            String role = claims.get("role").toString();
-            if (role != RoleEnum.ADMIN) {
-                response.json(ApiResult.result(ApiCode.ROLE_ERROR, locale));
-                return true;
-            }
-        }catch (Exception e){
-            getLogger().info(e.getMessage());
+    private boolean checkRoleFail(@NotNull Claims claims, @NotNull RoleEnum role) {
+        if (!role.getDesc().equals(claims.get("role").toString())) {
+            response.json(ApiResult.result(ApiCode.ROLE_ERROR, locale));
             return true;
         }
         return false;
