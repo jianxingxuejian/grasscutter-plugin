@@ -11,6 +11,8 @@ public enum ApiCode {
 
     FAIL(400),
 
+    TOKEN_GENERATE_FAIL(1000),
+
     TOKEN_NOT_FOUND(1001),
 
     TOKEN_EXPIRED(1002),

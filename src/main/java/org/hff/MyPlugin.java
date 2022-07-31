@@ -2,11 +2,14 @@ package org.hff;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import emu.grasscutter.Grasscutter;
+import emu.grasscutter.auth.DefaultAuthentication;
 import emu.grasscutter.plugin.Plugin;
 import emu.grasscutter.server.event.EventHandler;
 import emu.grasscutter.server.event.HandlerPriority;
 import emu.grasscutter.server.event.game.ReceiveCommandFeedbackEvent;
 import org.hff.i18n.LanguageManager;
+import org.hff.permission.Authentication;
 
 import java.io.File;
 import java.io.FileReader;
@@ -28,7 +31,9 @@ public final class MyPlugin extends Plugin {
     @Override
     public void onLoad() {
         instance = this;
+
         loadConfigFile();
+
         getLogger().info("grasscutter-plugin loaded");
     }
 
@@ -39,12 +44,18 @@ public final class MyPlugin extends Plugin {
                 .listener(EventListeners::onCommandSend)
                 .register(this);
         LanguageManager.register();
+
         getHandle().addRouter(PluginRouter.class);
+
+        Grasscutter.setAuthenticationSystem(new Authentication());
+
         getLogger().info("grasscutter-plugin enabled");
     }
 
     @Override
     public void onDisable() {
+        Grasscutter.setAuthenticationSystem(new DefaultAuthentication());
+
         getLogger().info("grasscutter-plugin disabled");
     }
 

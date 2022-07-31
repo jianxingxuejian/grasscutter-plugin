@@ -24,7 +24,7 @@
             <artifactId>grasscutter</artifactId>
             <version>${grasscutter.version}</version>
             <scope>system</scope>
-            <systemPath>${project.basedir}/lib/grasscutter-1.2.2-dev.jar</systemPath>
+            <systemPath>${project.basedir}/lib/grasscutter-1.2.3-dev.jar</systemPath>
         </dependency>
         <!-- jwt start -->
         <dependency>

@@ -12,13 +12,15 @@ public final class EventListeners {
     public static void onCommandSend(ReceiveCommandFeedbackEvent event) {
         if (event.getPlayer() != null) {
             messages.put(event.getPlayer().getAccount().getId(), event.getMessage());
+        } else {
+            messages.put("admin", event.getMessage());
         }
     }
 
-    public static String getMessage(String uid) {
-        String message = messages.get(uid);
+    public static String getMessage(String accountId) {
+        String message = messages.get(accountId);
         if (message != null) {
-            messages.remove(uid);
+            messages.remove(accountId);
         }
         return message;
     }

@@ -11,7 +11,6 @@ import io.jsonwebtoken.ExpiredJwtException;
 import org.hff.api.ApiCode;
 import org.hff.api.ApiResult;
 import org.hff.api.param.AccountParam;
-import org.hff.api.param.AuthByPasswordParam;
 import org.hff.api.param.AuthByVerifyCodeParam;
 import org.hff.i18n.LanguageManager;
 import org.hff.i18n.Locale;
@@ -23,8 +22,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 
-import static emu.grasscutter.Grasscutter.getGameServer;
-import static emu.grasscutter.Grasscutter.getLogger;
+import static emu.grasscutter.Grasscutter.*;
 
 public final class PluginHandler {
 
@@ -54,8 +52,7 @@ public final class PluginHandler {
             return;
         }
 
-        String token = JwtUtil.generateToken(RoleEnum.ADMIN, "0");
-        response.json(ApiResult.result(ApiCode.SUCCESS, locale, token));
+        generateToken(RoleEnum.ADMIN, "admin");
     }
 
     public void adminCreateAccount() {
@@ -64,13 +61,14 @@ public final class PluginHandler {
             return;
         }
 
-        Account account = DatabaseHelper.createAccountWithPassword(param.getUsername(), param.getPassword());
-        if (account == null) {
+        Account account = DatabaseHelper.getAccountByName(param.getUsername());
+        if (account != null) {
             response.json(ApiResult.result(ApiCode.ACCOUNT_IS_EXIST, locale));
             return;
         }
 
-        response.json(ApiResult.result(ApiCode.SUCCESS, locale));
+        getAuthenticationSystem().createAccount(param.getUsername(), param.getPassword());
+        response.json(ApiResult.success(locale));
     }
 
     public void adminCommand() {
@@ -79,8 +77,8 @@ public final class PluginHandler {
             return;
         }
 
-        Claims claims = parseToken();
-        if (claims == null || checkRoleFail(claims, RoleEnum.ADMIN)) {
+        Claims claims = parseToken(adminToken);
+        if (claims == null || checkRoleFail(claims)) {
             return;
         }
 
@@ -90,22 +88,22 @@ public final class PluginHandler {
             return;
         }
 
-        invokeCommand(null, command, claims.get("uid").toString());
+        invokeCommand(null, command, "admin");
     }
 
     public void mailVerifyCode() {
-        String uid = request.body().get("uid").toString();
-        if (uid == null) {
+        String username = request.body().get("username").toString();
+        if (username == null) {
             response.json(ApiResult.result(ApiCode.PARAM_EMPTY_EXCEPTION, locale));
             return;
         }
 
-        Player player = getPlayerByUid(uid);
+        Player player = getPlayerByUsername(username);
         if (player == null) {
             return;
         }
 
-        boolean flag = MailUtil.sendVerifyCodeMail(player, uid, locale);
+        boolean flag = MailUtil.sendVerifyCodeMail(player, locale);
         if (!flag) {
             response.json(ApiResult.result(ApiCode.MAIL_TIME_LIMIT, locale));
             return;
@@ -120,28 +118,26 @@ public final class PluginHandler {
             return;
         }
 
-        String uid = param.getUid();
-        boolean flag = MailUtil.checkVerifyCode(uid, param.getVerifyCode(), locale, response);
-        if (!flag) {
-            return;
-        }
-
-        Account account = getAccountByUid(uid);
+        Account account = getAccountByUsername(param.getUsername());
         if (account == null) {
             return;
         }
 
-        String token = JwtUtil.generateToken(RoleEnum.PLAYER, uid);
-        response.json(ApiResult.success(locale, token));
+        boolean flag = MailUtil.checkVerifyCode(account.getId(), param.getVerifyCode(), locale, response);
+        if (!flag) {
+            return;
+        }
+
+        generateToken(RoleEnum.PLAYER, account.getId());
     }
 
     public void playerAuthByPassword() {
-        AuthByPasswordParam param = request.body(AuthByPasswordParam.class);
+        AccountParam param = request.body(AccountParam.class);
         if (checkParamFail(param)) {
             return;
         }
 
-        Account account = getAccountByUid(param.getUid());
+        Account account = getAccountByUsername(param.getUsername());
         if (account == null) {
             return;
         }
@@ -151,7 +147,7 @@ public final class PluginHandler {
             return;
         }
 
-        response.json(ApiResult.success(locale, token));
+        generateToken(RoleEnum.PLAYER, account.getId());
     }
 
     public void playerCommand() {
@@ -160,7 +156,7 @@ public final class PluginHandler {
             return;
         }
 
-        Claims claims = parseToken();
+        Claims claims = parseToken(token);
         if (claims == null) {
             return;
         }
@@ -171,12 +167,22 @@ public final class PluginHandler {
             return;
         }
 
-        Player player = getPlayerByUid(claims.get("uid").toString());
+        String accountId = claims.get("accountId").toString();
+        Player player = getPlayerByAccountId(accountId);
         if (player == null) {
             return;
         }
 
-        invokeCommand(player, command, claims.get("uid").toString());
+        invokeCommand(player, command, accountId);
+    }
+
+    private void generateToken(RoleEnum role, String accountId) {
+        try {
+            String token = JwtUtil.generateToken(role, accountId);
+            response.json(ApiResult.success(locale, token));
+        } catch (Exception e) {
+            response.json(ApiResult.result(ApiCode.TOKEN_GENERATE_FAIL, locale, token));
+        }
     }
 
 
@@ -197,7 +203,7 @@ public final class PluginHandler {
         return false;
     }
 
-    private Claims parseToken() {
+    private Claims parseToken(String token) {
         try {
             return JwtUtil.parseToken(token);
         } catch (ExpiredJwtException e) {
@@ -208,24 +214,36 @@ public final class PluginHandler {
         return null;
     }
 
-    private boolean checkRoleFail(@NotNull Claims claims, @NotNull RoleEnum role) {
-        if (!role.getDesc().equals(claims.get("role").toString())) {
+    private boolean checkRoleFail(@NotNull Claims claims) {
+        if (!RoleEnum.ADMIN.getDesc().equals(claims.get("role").toString())) {
             response.json(ApiResult.result(ApiCode.ROLE_ERROR, locale));
             return true;
         }
         return false;
     }
 
-    private Account getAccountByUid(String uid) {
-        Account account = DatabaseHelper.getAccountById(uid);
+    private Account getAccountByUsername(String username) {
+        Account account = DatabaseHelper.getAccountByName(username);
         if (account == null) {
             response.json(ApiResult.result(ApiCode.ACCOUNT_NOT_EXIST, locale));
         }
         return account;
     }
 
-    private Player getPlayerByUid(String uid) {
-        Player player = getGameServer().getPlayerByAccountId(uid);
+    private Player getPlayerByAccountId(String accountId) {
+        Player player = getGameServer().getPlayerByAccountId(accountId);
+        if (player == null) {
+            response.json(ApiResult.result(ApiCode.PLAYER_NOT_ONLINE, locale));
+        }
+        return player;
+    }
+
+    private Player getPlayerByUsername(String username) {
+        Account account = getAccountByUsername(username);
+        if (account == null) {
+            return null;
+        }
+        Player player = getGameServer().getPlayerByAccountId(account.getId());
         if (player == null) {
             response.json(ApiResult.result(ApiCode.PLAYER_NOT_ONLINE, locale));
         }
@@ -233,11 +251,10 @@ public final class PluginHandler {
     }
 
 
-    private void invokeCommand(Player player, String command, String uid) {
+    private void invokeCommand(Player player, String command, String accountId) {
         CommandMap.getInstance().invoke(player, player, command);
-        String message = EventListeners.getMessage(uid);
+        String message = EventListeners.getMessage(accountId);
         if (message != null) {
-            getLogger().info(message);
             response.json(ApiResult.success(message));
         } else {
             response.json(ApiResult.fail(locale));

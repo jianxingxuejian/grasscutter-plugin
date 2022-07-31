@@ -7,7 +7,7 @@ import lombok.Setter;
 @Setter
 public class AuthByVerifyCodeParam {
 
-    private String uid;
+    private String username;
 
     private String verifyCode;
 

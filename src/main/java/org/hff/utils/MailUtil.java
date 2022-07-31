@@ -17,8 +17,9 @@ public class MailUtil {
 
     private static final Map<String, VerifyCodeMail> verifyCodeMailMap = new ConcurrentHashMap<>();
 
-    public static boolean sendVerifyCodeMail(Player player, String uid, Locale locale) {
-        VerifyCodeMail oldMail = verifyCodeMailMap.get(uid);
+    public static boolean sendVerifyCodeMail(Player player, Locale locale) {
+        String accountId = player.getAccount().getId();
+        VerifyCodeMail oldMail = verifyCodeMailMap.get(accountId);
         if (oldMail != null && oldMail.getExpireTime() > System.currentTimeMillis()) {
             return false;
         }
@@ -31,12 +32,12 @@ public class MailUtil {
         player.sendMail(mail);
 
         VerifyCodeMail verifyCodeMail = new VerifyCodeMail(verifyCode, System.currentTimeMillis() + 1000 * 60);
-        verifyCodeMailMap.put(uid, verifyCodeMail);
+        verifyCodeMailMap.put(accountId, verifyCodeMail);
         return true;
     }
 
-    public static boolean checkVerifyCode(String uid, String verifyCode, Locale locale, Response response) {
-        VerifyCodeMail verifyCodeMail = verifyCodeMailMap.get(uid);
+    public static boolean checkVerifyCode(String accountId, String verifyCode, Locale locale, Response response) {
+        VerifyCodeMail verifyCodeMail = verifyCodeMailMap.get(accountId);
 
         if (verifyCodeMail == null) {
             response.json(ApiResult.result(ApiCode.MAIL_VERIFY_NOT_FOUND, locale));
@@ -44,7 +45,7 @@ public class MailUtil {
         }
 
         if (verifyCodeMail.getExpireTime() < System.currentTimeMillis()) {
-            verifyCodeMailMap.remove(uid);
+            verifyCodeMailMap.remove(accountId);
             response.json(ApiResult.result(ApiCode.MAIL_VERIFY_EXPIRED, locale));
             return false;
         }
@@ -52,13 +53,13 @@ public class MailUtil {
         if (!verifyCodeMail.getVerifyCode().equals(verifyCode)) {
             verifyCodeMail.setRetries(verifyCodeMail.getRetries() - 1);
             if (verifyCodeMail.getRetries() <= 0) {
-                verifyCodeMailMap.remove(uid);
+                verifyCodeMailMap.remove(accountId);
             }
             response.json(ApiResult.result(ApiCode.MAIL_VERIFY_FAIL, locale).setArgs(verifyCodeMail.getRetries()));
             return false;
         }
 
-        verifyCodeMailMap.remove(uid);
+        verifyCodeMailMap.remove(accountId);
         return true;
     }
 

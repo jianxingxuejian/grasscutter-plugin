@@ -16,14 +16,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import static emu.grasscutter.Grasscutter.getLogger;
-
 
 public class JwtUtil {
 
     private static final Config config = MyPlugin.getInstance().getConfig();
 
-    public static String generateToken(@NotNull RoleEnum role, @NotNull String uid) {
+    public static String generateToken(@NotNull RoleEnum role, @NotNull String accountId) {
         long jwtExpire = config.getJwtExpire();
 
         long nowMillis = System.currentTimeMillis();
@@ -32,21 +30,16 @@ public class JwtUtil {
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role.getDesc());
-        claims.put("uid", uid);
+        claims.put("accountId", accountId);
 
-       try{
-           return Jwts.builder()
-                   .setIssuer("grasscutter-plugin")
-                   .setSubject("grasscutter-tools")
-                   .setIssuedAt(now)
-                   .setExpiration(expireDate)
-                   .setClaims(claims)
-                   .signWith(getKey())
-                   .compact();
-       }catch (Exception e){
-           getLogger().error("JwtUtil generateToken error", e);
-       }
-       return null;
+        return Jwts.builder()
+                .setIssuer("grasscutter-plugin")
+                .setSubject("grasscutter-tools")
+                .setIssuedAt(now)
+                .setExpiration(expireDate)
+                .setClaims(claims)
+                .signWith(getKey())
+                .compact();
     }
 
     public static Claims parseToken(@NotNull String token) {
