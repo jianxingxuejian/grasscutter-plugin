@@ -74,7 +74,7 @@ public final class MyPlugin extends Plugin {
         } else {
             try (var reader = new FileReader(configFile)) {
                 config = gson.fromJson(reader, Config.class);
-                getLogger().info(config.toString());
+                getLogger().info("your admin voucher is: " + config.getAdminVoucher());
             } catch (IOException e) {
                 getLogger().error("Error while reading config file", e);
             }

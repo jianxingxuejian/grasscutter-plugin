@@ -1,12 +1,26 @@
 {
   "msg": {
-    "200": "handle success",
-    "400": "handle fail"
+    "200": "success",
+    "400": "fail",
+    "1001": "token error",
+    "1002": "token expired",
+    "1003": "token parse fail",
+    "1004": "param is empty",
+    "1005": "param is error",
+    "1006": "auth fail",
+    "1007": "not role permission",
+    "2000": "account is exist",
+    "2001": "account is not exist",
+    "2002": "player not online",
+    "2003": "send mail fail",
+    "2004": "verifyCode mail is not exist",
+    "2005": "verifyCode mail expired",
+    "2006": "verifyCode compare fail, %d chances left"
   },
   "mail": {
     "verifyCode": {
       "title": "verificationCode",
-      "content": "sss"
+      "content": "your verificationCode is %s, please use it in 1 minute"
     }
   }
 }
