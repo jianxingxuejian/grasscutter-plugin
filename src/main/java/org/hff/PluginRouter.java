@@ -28,5 +28,8 @@ public final class PluginRouter implements Router {
 
         express.get("/plugin/player/command",
                 (request, response) -> new PluginHandler(request, response).playerCommand());
+
+        express.get("/plugin/player/levelUpAllSkill",
+                (request, response) -> new PluginHandler(request, response).levelUpAllSkill());
     }
 }

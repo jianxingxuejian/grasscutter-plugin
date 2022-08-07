@@ -1,9 +1,13 @@
 package org.hff;
 
 import emu.grasscutter.command.CommandMap;
+import emu.grasscutter.data.excels.AvatarSkillDepotData;
 import emu.grasscutter.database.DatabaseHelper;
 import emu.grasscutter.game.Account;
+import emu.grasscutter.game.avatar.Avatar;
 import emu.grasscutter.game.player.Player;
+import emu.grasscutter.server.packet.send.PacketAvatarSkillChangeNotify;
+import emu.grasscutter.server.packet.send.PacketAvatarSkillUpgradeRsp;
 import express.http.Request;
 import express.http.Response;
 import io.jsonwebtoken.Claims;
@@ -21,8 +25,10 @@ import org.hff.utils.MailUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
+import java.util.Map;
 
-import static emu.grasscutter.Grasscutter.*;
+import static emu.grasscutter.Grasscutter.getAuthenticationSystem;
+import static emu.grasscutter.Grasscutter.getGameServer;
 
 public final class PluginHandler {
 
@@ -174,6 +180,53 @@ public final class PluginHandler {
         }
 
         invokeCommand(player, command, accountId);
+    }
+
+    public void levelUpAllSkill() {
+        if (token == null) {
+            response.json(ApiResult.result(ApiCode.TOKEN_NOT_FOUND, locale));
+            return;
+        }
+
+        Claims claims = parseToken(token);
+        if (claims == null) {
+            return;
+        }
+
+        String accountId = claims.get("accountId").toString();
+        Player player = getPlayerByAccountId(accountId);
+        if (player == null) {
+            return;
+        }
+
+        for (Avatar avatar : player.getAvatars()) {
+            AvatarSkillDepotData skillDepot = avatar.getData().getSkillDepot();
+            int skillIdN = skillDepot.getSkills().get(0);
+            int skillIdE = skillDepot.getSkills().get(1);
+            int skillIdQ = skillDepot.getEnergySkill();
+            Map<Integer, Integer> skillLevelMap = avatar.getSkillLevelMap();
+            Integer oldLevelN = skillLevelMap.get(skillIdN);
+            Integer oldLevelE = skillLevelMap.get(skillIdE);
+            Integer oldLevelQ = skillLevelMap.get(skillIdQ);
+            if (oldLevelN < 15) {
+                skillLevelMap.put(skillIdN, 15);
+                player.sendPacket(new PacketAvatarSkillChangeNotify(avatar, skillIdN, oldLevelN, 15));
+                player.sendPacket(new PacketAvatarSkillUpgradeRsp(avatar, skillIdN, oldLevelN, 15));
+            }
+            if (oldLevelE < 15) {
+                skillLevelMap.put(skillIdE, 15);
+                player.sendPacket(new PacketAvatarSkillChangeNotify(avatar, skillIdE, oldLevelE, 15));
+                player.sendPacket(new PacketAvatarSkillUpgradeRsp(avatar, skillIdE, oldLevelE, 15));
+            }
+            if (oldLevelQ < 15) {
+                skillLevelMap.put(skillIdQ, 15);
+                player.sendPacket(new PacketAvatarSkillChangeNotify(avatar, skillIdQ, oldLevelQ, 15));
+                player.sendPacket(new PacketAvatarSkillUpgradeRsp(avatar, skillIdQ, oldLevelQ, 15));
+            }
+            avatar.save();
+        }
+
+        response.json(ApiResult.success(locale));
     }
 
     private void generateToken(RoleEnum role, String accountId) {
