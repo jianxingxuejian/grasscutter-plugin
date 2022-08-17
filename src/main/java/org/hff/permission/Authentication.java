@@ -17,7 +17,11 @@ public class Authentication implements AuthenticationSystem {
 
     @Override
     public void createAccount(String username, String password) {
-        DatabaseHelper.createAccountWithPassword(username, password);
+        Account account = DatabaseHelper.createAccountWithPassword(username, password);
+        if (account != null) {
+            account.addPermission("*");
+            account.save();
+        }
     }
 
     @Override
