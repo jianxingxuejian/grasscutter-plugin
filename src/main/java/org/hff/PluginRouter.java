@@ -31,5 +31,11 @@ public final class PluginRouter implements Router {
 
         express.get("/plugin/player/levelUpAllSkill",
                 (request, response) -> new PluginHandler(request, response).levelUpAllSkill());
+
+        express.get("/plugin/player/getProps",
+                (request, response) -> new PluginHandler(request, response).getProps());
+
+        express.get("/plugin/player/cdr",
+                (request, response) -> new PluginHandler(request, response).cdr());
     }
 }

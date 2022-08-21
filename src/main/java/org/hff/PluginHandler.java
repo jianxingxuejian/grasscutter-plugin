@@ -5,8 +5,14 @@ import emu.grasscutter.data.excels.AvatarSkillDepotData;
 import emu.grasscutter.database.DatabaseHelper;
 import emu.grasscutter.game.Account;
 import emu.grasscutter.game.avatar.Avatar;
+import emu.grasscutter.game.entity.EntityAvatar;
 import emu.grasscutter.game.player.Player;
-import emu.grasscutter.server.packet.send.PacketAvatarSkillChangeNotify;
+import emu.grasscutter.game.props.PlayerProperty;
+import emu.grasscutter.game.world.Scene;
+import emu.grasscutter.game.world.World;
+import emu.grasscutter.server.packet.send.PacketEntityFightPropUpdateNotify;
+import emu.grasscutter.server.packet.send.PacketSceneEntityAppearNotify;
+import emu.grasscutter.utils.Position;
 import express.http.Request;
 import express.http.Response;
 import io.jsonwebtoken.Claims;
@@ -15,6 +21,7 @@ import org.hff.api.ApiCode;
 import org.hff.api.ApiResult;
 import org.hff.api.param.AccountParam;
 import org.hff.api.param.AuthByVerifyCodeParam;
+import org.hff.api.vo.PropsVo;
 import org.hff.i18n.LanguageManager;
 import org.hff.i18n.Locale;
 import org.hff.permission.RoleEnum;
@@ -24,9 +31,11 @@ import org.hff.utils.MailUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Map;
 
 import static emu.grasscutter.Grasscutter.*;
+import static emu.grasscutter.game.props.FightProperty.FIGHT_PROP_SKILL_CD_MINUS_RATIO;
 
 public final class PluginHandler {
 
@@ -60,6 +69,11 @@ public final class PluginHandler {
     }
 
     public void adminCreateAccount() {
+        Claims claims = parseAdminToken();
+        if (claims == null) {
+            return;
+        }
+
         AccountParam param = request.body(AccountParam.class);
         if (checkParamFail(param)) {
             return;
@@ -76,13 +90,8 @@ public final class PluginHandler {
     }
 
     public void adminCommand() {
-        if (adminToken == null) {
-            response.json(ApiResult.result(ApiCode.TOKEN_NOT_FOUND, locale));
-            return;
-        }
-
-        Claims claims = parseToken(adminToken);
-        if (claims == null || checkRoleFail(claims)) {
+        Claims claims = parseAdminToken();
+        if (claims == null) {
             return;
         }
 
@@ -155,12 +164,7 @@ public final class PluginHandler {
     }
 
     public void playerCommand() {
-        if (token == null) {
-            response.json(ApiResult.result(ApiCode.TOKEN_NOT_FOUND, locale));
-            return;
-        }
-
-        Claims claims = parseToken(token);
+        Claims claims = parsePlayerToken();
         if (claims == null) {
             return;
         }
@@ -181,12 +185,7 @@ public final class PluginHandler {
     }
 
     public void levelUpAllSkill() {
-        if (token == null) {
-            response.json(ApiResult.result(ApiCode.TOKEN_NOT_FOUND, locale));
-            return;
-        }
-
-        Claims claims = parseToken(token);
+        Claims claims = parsePlayerToken();
         if (claims == null) {
             return;
         }
@@ -197,38 +196,153 @@ public final class PluginHandler {
             return;
         }
 
+        boolean flag = false;
         for (Avatar avatar : player.getAvatars()) {
             if (avatar.getLevel() < 90) {
+                flag = true;
                 avatar.setLevel(90);
             }
             if (avatar.getPromoteLevel() < 6) {
+                flag = true;
                 avatar.setPromoteLevel(6);
             }
-            avatar.recalcStats();
+            if (avatar.getCoreProudSkillLevel() < 6) {
+                avatar.forceConstellationLevel(6);
+            }
+            avatar.setFetterLevel(10);
+            avatar.recalcConstellations();
+            avatar.recalcStats(true);
+            avatar.save();
+
             AvatarSkillDepotData skillDepot = avatar.getSkillDepot();
             Integer skillIdN = skillDepot.getSkills().get(0);
             Integer skillIdE = skillDepot.getSkills().get(1);
-            Integer skillIdQ = skillDepot.getEnergySkill();
+            int skillIdQ = skillDepot.getEnergySkill();
             Map<Integer, Integer> skillLevelMap = avatar.getSkillLevelMap();
-            Integer oldLevelN = skillLevelMap.get(skillIdN);
-            Integer oldLevelE = skillLevelMap.get(skillIdE);
-            Integer oldLevelQ = skillLevelMap.get(skillIdQ);
+            Integer oldLevelN = skillLevelMap.getOrDefault(skillIdN, 0);
+            Integer oldLevelE = skillLevelMap.getOrDefault(skillIdE, 0);
+            Integer oldLevelQ = skillLevelMap.getOrDefault(skillIdQ, 0);
             if (oldLevelN < 10) {
-                skillLevelMap.put(skillIdN, 10);
-                player.sendPacket(new PacketAvatarSkillChangeNotify(avatar, skillIdN, oldLevelN, 10));
+                avatar.setSkillLevel(skillIdN, 10);
             }
             if (oldLevelE < 10) {
-                skillLevelMap.put(skillIdE, 10);
-                player.sendPacket(new PacketAvatarSkillChangeNotify(avatar, skillIdE, oldLevelE, 10));
+                avatar.setSkillLevel(skillIdE, 10);
             }
             if (oldLevelQ < 10) {
-                skillLevelMap.put(skillIdQ, 10);
-                player.sendPacket(new PacketAvatarSkillChangeNotify(avatar, skillIdQ, oldLevelQ, 10));
+                avatar.setSkillLevel(skillIdQ, 10);
             }
+
+            if (flag) {
+                World world = player.getWorld();
+                Scene scene = player.getScene();
+                Position pos = player.getPosition();
+                world.transferPlayerToScene(player, 1, pos);
+                world.transferPlayerToScene(player, scene.getId(), pos);
+                scene.broadcastPacket(new PacketSceneEntityAppearNotify(player));
+            }
+        }
+
+        response.json(ApiResult.success(locale));
+    }
+
+    public void getProps() {
+        Claims claims = parsePlayerToken();
+        if (claims == null) {
+            return;
+        }
+
+        String accountId = claims.get("accountId").toString();
+        Player player = getPlayerByAccountId(accountId);
+        if (player == null) {
+            return;
+        }
+
+        Avatar avatar = player.getTeamManager().getCurrentAvatarEntity().getAvatar();
+        Map<Integer, Integer> skillLevelMap = avatar.getSkillLevelMap();
+        AvatarSkillDepotData skillDepot = avatar.getSkillDepot();
+        PropsVo propsVo = new PropsVo();
+        propsVo.setInGodMode(player.inGodmode())
+                .setUnLimitedStamina(player.getUnlimitedStamina())
+                .setUnLimitedEnergy(!player.getEnergyManager().getEnergyUsage())
+                .setWorldLevel(player.getWorldLevel())
+                .setBpLevel(player.getBattlePassManager().getLevel())
+                .setTowerLevel(player.getTowerManager().getRecordMap().size())
+                .setPlayerLevel(player.getLevel())
+                .setClimateType(player.getClimate().getValue() - 1)
+                .setWeatherId(player.getWeatherId())
+                .setLockWeather(player.getProperty(PlayerProperty.PROP_IS_WEATHER_LOCKED) == 1)
+                .setLockGameTime(player.getProperty(PlayerProperty.PROP_IS_GAME_TIME_LOCKED) == 1)
+                .setSkillN(skillLevelMap.get(skillDepot.getSkills().get(0)))
+                .setSkillE(skillLevelMap.get(skillDepot.getSkills().get(1)))
+                .setSkillQ(skillLevelMap.get(skillDepot.getEnergySkill()))
+                .setAvatarLevel(avatar.getLevel())
+                .setConstellation(avatar.getCoreProudSkillLevel())
+                .setFetterLevel(avatar.getFetterLevel());
+
+        response.json(ApiResult.success(locale, propsVo));
+    }
+
+    public void cdr() {
+        Claims claims = parsePlayerToken();
+        if (claims == null) {
+            return;
+        }
+
+        String accountId = claims.get("accountId").toString();
+        Player player = getPlayerByAccountId(accountId);
+        if (player == null) {
+            return;
+        }
+
+        List<EntityAvatar> team = player.getTeamManager().getActiveTeam();
+        for (Avatar avatar : player.getAvatars()) {
+            team.stream().filter(e -> e.getAvatar().getAvatarId() == avatar.getAvatarId()).findFirst()
+                    .ifPresent(e -> {
+                        e.setFightProperty(FIGHT_PROP_SKILL_CD_MINUS_RATIO, 1);
+                        e.getWorld().broadcastPacket(new PacketEntityFightPropUpdateNotify(e, FIGHT_PROP_SKILL_CD_MINUS_RATIO));
+                    });
+            avatar.getFightPropOverrides().put(80, 1);
+            avatar.recalcStats();
             avatar.save();
         }
 
         response.json(ApiResult.success(locale));
+    }
+
+
+    private Claims parseAdminToken() {
+        if (adminToken == null) {
+            response.json(ApiResult.result(ApiCode.TOKEN_NOT_FOUND, locale));
+            return null;
+        }
+        Claims claims = parseToken(token);
+        if (claims == null) {
+            return null;
+        }
+        if (!RoleEnum.ADMIN.getDesc().equals(claims.get("role").toString())) {
+            response.json(ApiResult.result(ApiCode.ROLE_ERROR, locale));
+            return null;
+        }
+        return claims;
+    }
+
+    private Claims parsePlayerToken() {
+        if (token == null) {
+            response.json(ApiResult.result(ApiCode.TOKEN_NOT_FOUND, locale));
+            return null;
+        }
+        return parseToken(token);
+    }
+
+    private Claims parseToken(String token) {
+        try {
+            return JwtUtil.parseToken(token);
+        } catch (ExpiredJwtException e) {
+            response.json(ApiResult.result(ApiCode.TOKEN_EXPIRED, locale));
+        } catch (Exception e) {
+            response.json(ApiResult.result(ApiCode.TOKEN_PARSE_EXCEPTION, locale));
+        }
+        return null;
     }
 
     private void generateToken(RoleEnum role, String accountId) {
@@ -254,25 +368,6 @@ public final class PluginHandler {
                 response.json(ApiResult.result(ApiCode.PARAM_ILLEGAL_EXCEPTION, locale));
                 return true;
             }
-        }
-        return false;
-    }
-
-    private Claims parseToken(String token) {
-        try {
-            return JwtUtil.parseToken(token);
-        } catch (ExpiredJwtException e) {
-            response.json(ApiResult.result(ApiCode.TOKEN_EXPIRED, locale));
-        } catch (Exception e) {
-            response.json(ApiResult.result(ApiCode.TOKEN_PARSE_EXCEPTION, locale));
-        }
-        return null;
-    }
-
-    private boolean checkRoleFail(@NotNull Claims claims) {
-        if (!RoleEnum.ADMIN.getDesc().equals(claims.get("role").toString())) {
-            response.json(ApiResult.result(ApiCode.ROLE_ERROR, locale));
-            return true;
         }
         return false;
     }
