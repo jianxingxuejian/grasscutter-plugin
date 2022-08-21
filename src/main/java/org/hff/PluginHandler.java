@@ -315,7 +315,7 @@ public final class PluginHandler {
             response.json(ApiResult.result(ApiCode.TOKEN_NOT_FOUND, locale));
             return null;
         }
-        Claims claims = parseToken(token);
+        Claims claims = parseToken(adminToken);
         if (claims == null) {
             return null;
         }

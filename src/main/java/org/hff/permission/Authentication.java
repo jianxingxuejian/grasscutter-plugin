@@ -1,12 +1,13 @@
 package org.hff.permission;
 
+import emu.grasscutter.Grasscutter;
 import emu.grasscutter.auth.*;
 import emu.grasscutter.database.DatabaseHelper;
 import emu.grasscutter.game.Account;
 import emu.grasscutter.server.http.objects.ComboTokenResJson;
 import emu.grasscutter.server.http.objects.LoginResultJson;
 
-import static emu.grasscutter.Grasscutter.getLogger;
+import static emu.grasscutter.utils.Language.translate;
 
 public class Authentication implements AuthenticationSystem {
 
@@ -31,7 +32,7 @@ public class Authentication implements AuthenticationSystem {
 
     @Override
     public Account verifyUser(String s) {
-        getLogger().error("verifyUser: " + s);
+        Grasscutter.getLogger().info(translate("messages.dispatch.authentication.default_unable_to_verify"));
         return null;
     }
 
