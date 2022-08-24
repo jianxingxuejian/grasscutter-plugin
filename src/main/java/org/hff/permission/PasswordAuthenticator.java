@@ -62,6 +62,7 @@ public class PasswordAuthenticator implements Authenticator<LoginResultJson> {
 
         getLogger().info(translate("messages.dispatch.account.login_success", address, account.getId()));
 
+        response.retcode = 0;
         response.message = "OK";
         response.data.account.uid = account.getId();
         response.data.account.token = account.generateSessionKey();

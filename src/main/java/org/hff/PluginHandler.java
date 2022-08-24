@@ -222,14 +222,14 @@ public final class PluginHandler {
             Integer oldLevelN = skillLevelMap.getOrDefault(skillIdN, 0);
             Integer oldLevelE = skillLevelMap.getOrDefault(skillIdE, 0);
             Integer oldLevelQ = skillLevelMap.getOrDefault(skillIdQ, 0);
-            if (oldLevelN < 10) {
-                avatar.setSkillLevel(skillIdN, 10);
+            if (oldLevelN < 14) {
+                avatar.setSkillLevel(skillIdN, 14);
             }
-            if (oldLevelE < 10) {
-                avatar.setSkillLevel(skillIdE, 10);
+            if (oldLevelE < 12) {
+                avatar.setSkillLevel(skillIdE, 12);
             }
-            if (oldLevelQ < 10) {
-                avatar.setSkillLevel(skillIdQ, 10);
+            if (oldLevelQ < 12) {
+                avatar.setSkillLevel(skillIdQ, 12);
             }
 
             if (flag) {
