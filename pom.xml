@@ -14,6 +14,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <grasscutter.version>1.2.3</grasscutter.version>
         <jjwt.version>0.11.5</jjwt.version>
+        <expiringMap.version>0.5.10</expiringMap.version>
         <lombok.version>1.18.24</lombok.version>
     </properties>
 
@@ -44,7 +45,13 @@
             <version>${jjwt.version}</version>
             <scope>runtime</scope>
         </dependency>
-        <!-- jwt end -->
+        <!-- expiringMap -->
+        <dependency>
+            <groupId>net.jodah</groupId>
+            <artifactId>expiringmap</artifactId>
+            <version>${expiringmap.version}</version>
+        </dependency>
+        <!-- lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
