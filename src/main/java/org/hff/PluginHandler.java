@@ -13,8 +13,7 @@ import emu.grasscutter.game.world.World;
 import emu.grasscutter.server.packet.send.PacketEntityFightPropUpdateNotify;
 import emu.grasscutter.server.packet.send.PacketSceneEntityAppearNotify;
 import emu.grasscutter.utils.Position;
-import express.http.Request;
-import express.http.Response;
+import io.javalin.http.Context;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.hff.api.ApiCode;
@@ -39,29 +38,27 @@ import static emu.grasscutter.game.props.FightProperty.FIGHT_PROP_SKILL_CD_MINUS
 
 public final class PluginHandler {
 
-    private final Request request;
-    private final Response response;
+    private final Context ctx;
     private final Locale locale;
     private final String token;
     private final String adminToken;
 
-    public PluginHandler(@NotNull Request request, @NotNull Response response) {
-        this.request = request;
-        this.response = response;
-        this.locale = LanguageManager.getLocale(request.get("locale"));
-        this.token = request.get("token");
-        this.adminToken = request.get("admin_token");
+    public PluginHandler(@NotNull Context ctx) {
+        this.ctx = ctx;
+        this.locale = LanguageManager.getLocale(ctx.req.getHeader("locale"));
+        this.token = ctx.req.getHeader("token");
+        this.adminToken = ctx.req.getHeader("admin_token");
     }
 
     public void adminAuth() {
-        String adminVoucher = request.body().get("adminVoucher").toString();
+        String adminVoucher = ctx.queryParam("adminVoucher");
         if (adminVoucher == null) {
-            response.json(ApiResult.result(ApiCode.PARAM_EMPTY_EXCEPTION, locale));
+            ctx.json(ApiResult.result(ApiCode.PARAM_EMPTY_EXCEPTION, locale));
             return;
         }
 
         if (!AuthUtil.checkAdminVoucher(adminVoucher)) {
-            response.json(ApiResult.result(ApiCode.AUTH_FAIL, locale));
+            ctx.json(ApiResult.result(ApiCode.AUTH_FAIL, locale));
             return;
         }
 
@@ -74,19 +71,19 @@ public final class PluginHandler {
             return;
         }
 
-        AccountParam param = request.body(AccountParam.class);
+        AccountParam param = ctx.bodyAsClass(AccountParam.class);
         if (checkParamFail(param)) {
             return;
         }
 
         Account account = DatabaseHelper.getAccountByName(param.getUsername());
         if (account != null) {
-            response.json(ApiResult.result(ApiCode.ACCOUNT_IS_EXIST, locale));
+            ctx.json(ApiResult.result(ApiCode.ACCOUNT_IS_EXIST, locale));
             return;
         }
 
         getAuthenticationSystem().createAccount(param.getUsername(), param.getPassword());
-        response.json(ApiResult.success(locale));
+        ctx.json(ApiResult.success(locale));
     }
 
     public void adminCommand() {
@@ -95,9 +92,9 @@ public final class PluginHandler {
             return;
         }
 
-        String command = request.body().get("command").toString();
+        String command = ctx.queryParam("command");
         if (command == null) {
-            response.json(ApiResult.result(ApiCode.PARAM_EMPTY_EXCEPTION, locale));
+            ctx.json(ApiResult.result(ApiCode.PARAM_EMPTY_EXCEPTION, locale));
             return;
         }
 
@@ -105,9 +102,9 @@ public final class PluginHandler {
     }
 
     public void mailVerifyCode() {
-        String username = request.body().get("username").toString();
+        String username = ctx.queryParam("username");
         if (username == null) {
-            response.json(ApiResult.result(ApiCode.PARAM_EMPTY_EXCEPTION, locale));
+            ctx.json(ApiResult.result(ApiCode.PARAM_EMPTY_EXCEPTION, locale));
             return;
         }
 
@@ -118,15 +115,15 @@ public final class PluginHandler {
 
         boolean flag = MailUtil.sendVerifyCodeMail(player, locale);
         if (!flag) {
-            response.json(ApiResult.result(ApiCode.MAIL_TIME_LIMIT, locale));
+            ctx.json(ApiResult.result(ApiCode.MAIL_TIME_LIMIT, locale));
             return;
         }
 
-        response.json(ApiResult.success(locale));
+        ctx.json(ApiResult.success(locale));
     }
 
     public void playerAuthByVerifyCode() {
-        AuthByVerifyCodeParam param = request.body(AuthByVerifyCodeParam.class);
+        AuthByVerifyCodeParam param = ctx.bodyAsClass(AuthByVerifyCodeParam.class);
         if (checkParamFail(param)) {
             return;
         }
@@ -136,7 +133,7 @@ public final class PluginHandler {
             return;
         }
 
-        boolean flag = MailUtil.checkVerifyCode(account.getId(), param.getVerifyCode(), locale, response);
+        boolean flag = MailUtil.checkVerifyCode(account.getId(), param.getVerifyCode(), locale, ctx);
         if (!flag) {
             return;
         }
@@ -145,7 +142,7 @@ public final class PluginHandler {
     }
 
     public void playerAuthByPassword() {
-        AccountParam param = request.body(AccountParam.class);
+        AccountParam param = ctx.bodyAsClass(AccountParam.class);
         if (checkParamFail(param)) {
             return;
         }
@@ -156,7 +153,7 @@ public final class PluginHandler {
         }
 
         if (!param.getPassword().equals(account.getPassword())) {
-            response.json(ApiResult.result(ApiCode.AUTH_FAIL, locale));
+            ctx.json(ApiResult.result(ApiCode.AUTH_FAIL, locale));
             return;
         }
 
@@ -169,9 +166,9 @@ public final class PluginHandler {
             return;
         }
 
-        String command = request.body().get("command").toString();
+        String command = ctx.queryParam("command");
         if (command == null) {
-            response.json(ApiResult.result(ApiCode.PARAM_EMPTY_EXCEPTION, locale));
+            ctx.json(ApiResult.result(ApiCode.PARAM_EMPTY_EXCEPTION, locale));
             return;
         }
 
@@ -242,7 +239,7 @@ public final class PluginHandler {
             }
         }
 
-        response.json(ApiResult.success(locale));
+        ctx.json(ApiResult.success(locale));
     }
 
     public void getProps() {
@@ -279,7 +276,7 @@ public final class PluginHandler {
                 .setConstellation(avatar.getCoreProudSkillLevel())
                 .setFetterLevel(avatar.getFetterLevel());
 
-        response.json(ApiResult.success(locale, propsVo));
+        ctx.json(ApiResult.success(locale, propsVo));
     }
 
     public void cdr() {
@@ -306,13 +303,13 @@ public final class PluginHandler {
             avatar.save();
         }
 
-        response.json(ApiResult.success(locale));
+        ctx.json(ApiResult.success(locale));
     }
 
 
     private Claims parseAdminToken() {
         if (adminToken == null) {
-            response.json(ApiResult.result(ApiCode.TOKEN_NOT_FOUND, locale));
+            ctx.json(ApiResult.result(ApiCode.TOKEN_NOT_FOUND, locale));
             return null;
         }
         Claims claims = parseToken(adminToken);
@@ -320,7 +317,7 @@ public final class PluginHandler {
             return null;
         }
         if (!RoleEnum.ADMIN.getDesc().equals(claims.get("role").toString())) {
-            response.json(ApiResult.result(ApiCode.ROLE_ERROR, locale));
+            ctx.json(ApiResult.result(ApiCode.ROLE_ERROR, locale));
             return null;
         }
         return claims;
@@ -328,7 +325,7 @@ public final class PluginHandler {
 
     private Claims parsePlayerToken() {
         if (token == null) {
-            response.json(ApiResult.result(ApiCode.TOKEN_NOT_FOUND, locale));
+            ctx.json(ApiResult.result(ApiCode.TOKEN_NOT_FOUND, locale));
             return null;
         }
         return parseToken(token);
@@ -338,9 +335,9 @@ public final class PluginHandler {
         try {
             return JwtUtil.parseToken(token);
         } catch (ExpiredJwtException e) {
-            response.json(ApiResult.result(ApiCode.TOKEN_EXPIRED, locale));
+            ctx.json(ApiResult.result(ApiCode.TOKEN_EXPIRED, locale));
         } catch (Exception e) {
-            response.json(ApiResult.result(ApiCode.TOKEN_PARSE_EXCEPTION, locale));
+            ctx.json(ApiResult.result(ApiCode.TOKEN_PARSE_EXCEPTION, locale));
         }
         return null;
     }
@@ -348,9 +345,9 @@ public final class PluginHandler {
     private void generateToken(RoleEnum role, String accountId) {
         try {
             String token = JwtUtil.generateToken(role, accountId);
-            response.json(ApiResult.success(locale, token));
+            ctx.json(ApiResult.success(locale, token));
         } catch (Exception e) {
-            response.json(ApiResult.result(ApiCode.TOKEN_GENERATE_FAIL, locale, token));
+            ctx.json(ApiResult.result(ApiCode.TOKEN_GENERATE_FAIL, locale, token));
         }
     }
 
@@ -361,11 +358,11 @@ public final class PluginHandler {
             try {
                 Object object = field.get(param);
                 if (object == null || object.toString().isEmpty()) {
-                    response.json(ApiResult.result(ApiCode.PARAM_EMPTY_EXCEPTION, locale));
+                    ctx.json(ApiResult.result(ApiCode.PARAM_EMPTY_EXCEPTION, locale));
                     return true;
                 }
             } catch (IllegalAccessException e) {
-                response.json(ApiResult.result(ApiCode.PARAM_ILLEGAL_EXCEPTION, locale));
+                ctx.json(ApiResult.result(ApiCode.PARAM_ILLEGAL_EXCEPTION, locale));
                 return true;
             }
         }
@@ -375,7 +372,7 @@ public final class PluginHandler {
     private Account getAccountByUsername(String username) {
         Account account = DatabaseHelper.getAccountByName(username);
         if (account == null) {
-            response.json(ApiResult.result(ApiCode.ACCOUNT_NOT_EXIST, locale));
+            ctx.json(ApiResult.result(ApiCode.ACCOUNT_NOT_EXIST, locale));
         }
         return account;
     }
@@ -383,7 +380,7 @@ public final class PluginHandler {
     private Player getPlayerByAccountId(String accountId) {
         Player player = getGameServer().getPlayerByAccountId(accountId);
         if (player == null) {
-            response.json(ApiResult.result(ApiCode.PLAYER_NOT_ONLINE, locale));
+            ctx.json(ApiResult.result(ApiCode.PLAYER_NOT_ONLINE, locale));
         }
         return player;
     }
@@ -395,7 +392,7 @@ public final class PluginHandler {
         }
         Player player = getGameServer().getPlayerByAccountId(account.getId());
         if (player == null) {
-            response.json(ApiResult.result(ApiCode.PLAYER_NOT_ONLINE, locale));
+            ctx.json(ApiResult.result(ApiCode.PLAYER_NOT_ONLINE, locale));
         }
         return player;
     }
@@ -405,9 +402,9 @@ public final class PluginHandler {
         CommandMap.getInstance().invoke(player, player, command);
         String message = EventListeners.getMessage(accountId);
         if (message != null) {
-            response.json(ApiResult.success(message));
+            ctx.json(ApiResult.success(message));
         } else {
-            response.json(ApiResult.fail(locale));
+            ctx.json(ApiResult.fail(locale));
         }
     }
 }

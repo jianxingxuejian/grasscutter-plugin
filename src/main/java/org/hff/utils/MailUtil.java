@@ -2,20 +2,21 @@ package org.hff.utils;
 
 import emu.grasscutter.game.mail.Mail;
 import emu.grasscutter.game.player.Player;
-import express.http.Response;
+import io.javalin.http.Context;
 import lombok.Getter;
 import lombok.Setter;
+import net.jodah.expiringmap.ExpiringMap;
 import org.hff.api.ApiCode;
 import org.hff.api.ApiResult;
 import org.hff.i18n.LanguageManager;
 import org.hff.i18n.Locale;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class MailUtil {
 
-    private static final Map<String, VerifyCodeMail> verifyCodeMailMap = new ConcurrentHashMap<>();
+    private static final Map<String, VerifyCodeMail> verifyCodeMailMap = ExpiringMap.builder().expiration(2, TimeUnit.MINUTES).build();
 
     public static boolean sendVerifyCodeMail(Player player, Locale locale) {
         String accountId = player.getAccount().getId();
@@ -36,17 +37,17 @@ public class MailUtil {
         return true;
     }
 
-    public static boolean checkVerifyCode(String accountId, String verifyCode, Locale locale, Response response) {
+    public static boolean checkVerifyCode(String accountId, String verifyCode, Locale locale, Context ctx) {
         VerifyCodeMail verifyCodeMail = verifyCodeMailMap.get(accountId);
 
         if (verifyCodeMail == null) {
-            response.json(ApiResult.result(ApiCode.MAIL_VERIFY_NOT_FOUND, locale));
+            ctx.json(ApiResult.result(ApiCode.MAIL_VERIFY_NOT_FOUND, locale));
             return false;
         }
 
         if (verifyCodeMail.getExpireTime() < System.currentTimeMillis()) {
             verifyCodeMailMap.remove(accountId);
-            response.json(ApiResult.result(ApiCode.MAIL_VERIFY_EXPIRED, locale));
+            ctx.json(ApiResult.result(ApiCode.MAIL_VERIFY_EXPIRED, locale));
             return false;
         }
 
@@ -55,7 +56,7 @@ public class MailUtil {
             if (verifyCodeMail.getRetries() <= 0) {
                 verifyCodeMailMap.remove(accountId);
             }
-            response.json(ApiResult.result(ApiCode.MAIL_VERIFY_FAIL, locale).setArgs(verifyCodeMail.getRetries()));
+            ctx.json(ApiResult.result(ApiCode.MAIL_VERIFY_FAIL, locale).setArgs(verifyCodeMail.getRetries()));
             return false;
         }
 

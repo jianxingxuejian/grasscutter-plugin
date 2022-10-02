@@ -1,41 +1,40 @@
 package org.hff;
 
 import emu.grasscutter.server.http.Router;
-import express.Express;
 import io.javalin.Javalin;
 
 public final class PluginRouter implements Router {
 
     @Override
-    public void applyRoutes(Express express, Javalin javalin) {
-        express.get("/plugin/admin/auth",
-                (request, response) -> new PluginHandler(request, response).adminAuth());
+    public void applyRoutes(Javalin javalin) {
+        javalin.get("/plugin/admin/auth",
+                ctx -> new PluginHandler(ctx).adminAuth());
 
-        express.get("/plugin/admin/createAccount",
-                (request, response) -> new PluginHandler(request, response).adminCreateAccount());
+        javalin.get("/plugin/admin/createAccount",
+                ctx -> new PluginHandler(ctx).adminCreateAccount());
 
-        express.get("/plugin/admin/command",
-                (request, response) -> new PluginHandler(request, response).adminCommand());
+        javalin.get("/plugin/admin/command",
+                ctx -> new PluginHandler(ctx).adminCommand());
 
-        express.get("/plugin/mail/verifyCode",
-                (request, response) -> new PluginHandler(request, response).mailVerifyCode());
+        javalin.get("/plugin/mail/verifyCode",
+                ctx -> new PluginHandler(ctx).mailVerifyCode());
 
-        express.get("/plugin/player/authByVerifyCode",
-                (request, response) -> new PluginHandler(request, response).playerAuthByVerifyCode());
+        javalin.get("/plugin/player/authByVerifyCode",
+                ctx -> new PluginHandler(ctx).playerAuthByVerifyCode());
 
-        express.get("/plugin/player/authByPassword",
-                (request, response) -> new PluginHandler(request, response).playerAuthByPassword());
+        javalin.get("/plugin/player/authByPassword",
+                ctx -> new PluginHandler(ctx).playerAuthByPassword());
 
-        express.get("/plugin/player/command",
-                (request, response) -> new PluginHandler(request, response).playerCommand());
+        javalin.get("/plugin/player/command",
+                ctx -> new PluginHandler(ctx).playerCommand());
 
-        express.get("/plugin/player/levelUpAllSkill",
-                (request, response) -> new PluginHandler(request, response).levelUpAllSkill());
+        javalin.get("/plugin/player/levelUpAllSkill",
+                ctx -> new PluginHandler(ctx).levelUpAllSkill());
 
-        express.get("/plugin/player/getProps",
-                (request, response) -> new PluginHandler(request, response).getProps());
+        javalin.get("/plugin/player/getProps",
+                ctx -> new PluginHandler(ctx).getProps());
 
-        express.get("/plugin/player/cdr",
-                (request, response) -> new PluginHandler(request, response).cdr());
+        javalin.get("/plugin/player/cdr",
+                ctx -> new PluginHandler(ctx).cdr());
     }
 }

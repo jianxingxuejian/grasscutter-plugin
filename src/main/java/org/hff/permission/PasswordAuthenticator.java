@@ -1,5 +1,6 @@
 package org.hff.permission;
 
+import at.favre.lib.crypto.bcrypt.BCrypt;
 import emu.grasscutter.auth.AuthenticationSystem;
 import emu.grasscutter.auth.Authenticator;
 import emu.grasscutter.database.DatabaseHelper;
@@ -21,7 +22,7 @@ public class PasswordAuthenticator implements Authenticator<LoginResultJson> {
         assert requestData != null;
 
         var response = new LoginResultJson();
-        String address = request.getRequest().ip();
+        String address = request.getContext().ip();
         response.retcode = -201;
 
         if (getGameServer().getPlayers().size() >= ACCOUNT.maxPlayer && ACCOUNT.maxPlayer > -1) {
@@ -30,33 +31,44 @@ public class PasswordAuthenticator implements Authenticator<LoginResultJson> {
             return response;
         }
 
-        Account account = DatabaseHelper.getAccountByName(requestData.account);
-        if (account == null && !ACCOUNT.autoCreate) {
-            getLogger().info(translate("messages.dispatch.account.account_login_exist_error", address));
-            response.message = translate("messages.dispatch.account.username_error");
+        String password = requestData.password;
+        if (password == null) {
+            getLogger().info(translate("messages.dispatch.account.login_password_error", address));
+            response.message = translate("messages.dispatch.account.password_error");
             return response;
         }
 
+        try {
+            password = AuthUtil.decryptPassword(password);
+        } catch (Exception ignored) {
+        }
+
+        Account account = DatabaseHelper.getAccountByName(requestData.account);
         if (account == null) {
+            if (!ACCOUNT.autoCreate) {
+                getLogger().info(translate("messages.dispatch.account.account_login_exist_error", address));
+                response.message = translate("messages.dispatch.account.username_error");
+                return response;
+            }
+
             account = DatabaseHelper.createAccountWithUid(requestData.account, 0);
             if (account == null) {
                 getLogger().info(translate("messages.dispatch.account.account_login_create_error", address));
                 response.message = translate("messages.dispatch.account.username_create_error");
                 return response;
-            } else {
-                getLogger().info(translate("messages.dispatch.account.account_login_create_success", address, response.data.account.uid));
             }
-        }
 
-        if (account.getPassword() != null) {
-            try {
-                String password = AuthUtil.decryptPassword(requestData.password);
-                if (!password.equals(account.getPassword())) {
+            account.setPassword(BCrypt.withDefaults().hashToString(12, password.toCharArray()));
+            account.save();
+            getLogger().info(translate("messages.dispatch.account.account_login_create_success", address, response.data.account.uid));
+        } else {
+            String accountPassword = account.getPassword();
+            if (accountPassword != null && !accountPassword.isEmpty()) {
+                if (!BCrypt.verifyer().verify(password.toCharArray(), accountPassword).verified && !accountPassword.equals(password)) {
+                    getLogger().info(translate("messages.dispatch.account.login_password_error", address));
                     response.message = translate("messages.dispatch.account.password_error");
                     return response;
                 }
-            } catch (Exception e) {
-                getLogger().error("Error with decrypt password: " + e.getMessage());
             }
         }
 
