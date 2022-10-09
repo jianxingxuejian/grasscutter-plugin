@@ -28,8 +28,8 @@ public final class PluginRouter implements Router {
         javalin.get("/plugin/player/command",
                 ctx -> new PluginHandler(ctx).playerCommand());
 
-        javalin.get("/plugin/player/levelUpAllSkill",
-                ctx -> new PluginHandler(ctx).levelUpAllSkill());
+        javalin.get("/plugin/player/levelUpAll",
+                ctx -> new PluginHandler(ctx).levelUpAll());
 
         javalin.get("/plugin/player/getProps",
                 ctx -> new PluginHandler(ctx).getProps());

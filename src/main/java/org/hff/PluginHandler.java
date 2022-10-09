@@ -181,7 +181,7 @@ public final class PluginHandler {
         invokeCommand(player, command, accountId);
     }
 
-    public void levelUpAllSkill() {
+    public void levelUpAll() {
         Claims claims = parsePlayerToken();
         if (claims == null) {
             return;
@@ -193,53 +193,83 @@ public final class PluginHandler {
             return;
         }
 
+        Integer type = ctx.queryParamAsClass("type", Integer.class).getOrDefault(0);
+
         boolean flag = false;
-        for (Avatar avatar : player.getAvatars()) {
-            if (avatar.getLevel() < 90) {
-                flag = true;
-                avatar.setLevel(90);
-            }
-            if (avatar.getPromoteLevel() < 6) {
-                flag = true;
-                avatar.setPromoteLevel(6);
-            }
-            if (avatar.getCoreProudSkillLevel() < 6) {
-                avatar.forceConstellationLevel(6);
-            }
-            avatar.setFetterLevel(10);
-            avatar.recalcConstellations();
-            avatar.recalcStats(true);
-            avatar.save();
 
-            AvatarSkillDepotData skillDepot = avatar.getSkillDepot();
-            Integer skillIdN = skillDepot.getSkills().get(0);
-            Integer skillIdE = skillDepot.getSkills().get(1);
-            int skillIdQ = skillDepot.getEnergySkill();
-            Map<Integer, Integer> skillLevelMap = avatar.getSkillLevelMap();
-            Integer oldLevelN = skillLevelMap.getOrDefault(skillIdN, 0);
-            Integer oldLevelE = skillLevelMap.getOrDefault(skillIdE, 0);
-            Integer oldLevelQ = skillLevelMap.getOrDefault(skillIdQ, 0);
-            if (oldLevelN < 14) {
-                avatar.setSkillLevel(skillIdN, 14);
+        if (type == 0) {
+            for (Avatar avatar : player.getAvatars()) {
+                flag = levelUpConstellation(avatar);
+                levelUpSkill(avatar);
+                levelUpFetter(avatar);
             }
-            if (oldLevelE < 12) {
-                avatar.setSkillLevel(skillIdE, 12);
+        } else if (type == 1) {
+            for (Avatar avatar : player.getAvatars()) {
+                flag = levelUpConstellation(avatar);
             }
-            if (oldLevelQ < 12) {
-                avatar.setSkillLevel(skillIdQ, 12);
+        } else if (type == 2) {
+            for (Avatar avatar : player.getAvatars()) {
+                levelUpSkill(avatar);
             }
-
-            if (flag) {
-                World world = player.getWorld();
-                Scene scene = player.getScene();
-                Position pos = player.getPosition();
-                world.transferPlayerToScene(player, 1, pos);
-                world.transferPlayerToScene(player, scene.getId(), pos);
-                scene.broadcastPacket(new PacketSceneEntityAppearNotify(player));
+        } else if (type == 3) {
+            for (Avatar avatar : player.getAvatars()) {
+                levelUpFetter(avatar);
             }
         }
 
+        if (flag) {
+            World world = player.getWorld();
+            Scene scene = player.getScene();
+            Position pos = player.getPosition();
+            world.transferPlayerToScene(player, 1, pos);
+            world.transferPlayerToScene(player, scene.getId(), pos);
+            scene.broadcastPacket(new PacketSceneEntityAppearNotify(player));
+        }
+
         ctx.json(ApiResult.success(locale));
+    }
+
+
+    private boolean levelUpConstellation(Avatar avatar) {
+        boolean flag = false;
+        if (avatar.getLevel() < 90) {
+            flag = true;
+            avatar.setLevel(90);
+        }
+        if (avatar.getPromoteLevel() < 6) {
+            flag = true;
+            avatar.setPromoteLevel(6);
+        }
+        if (avatar.getCoreProudSkillLevel() < 6) {
+            avatar.forceConstellationLevel(6);
+        }
+        avatar.recalcConstellations();
+        avatar.recalcStats(true);
+        return flag;
+    }
+
+    private void levelUpSkill(Avatar avatar) {
+        AvatarSkillDepotData skillDepot = avatar.getSkillDepot();
+        Integer skillIdN = skillDepot.getSkills().get(0);
+        Integer skillIdE = skillDepot.getSkills().get(1);
+        int skillIdQ = skillDepot.getEnergySkill();
+        Map<Integer, Integer> skillLevelMap = avatar.getSkillLevelMap();
+        Integer oldLevelN = skillLevelMap.getOrDefault(skillIdN, 0);
+        Integer oldLevelE = skillLevelMap.getOrDefault(skillIdE, 0);
+        Integer oldLevelQ = skillLevelMap.getOrDefault(skillIdQ, 0);
+        if (oldLevelN < 14) {
+            avatar.setSkillLevel(skillIdN, 14);
+        }
+        if (oldLevelE < 12) {
+            avatar.setSkillLevel(skillIdE, 12);
+        }
+        if (oldLevelQ < 12) {
+            avatar.setSkillLevel(skillIdQ, 12);
+        }
+    }
+
+    private void levelUpFetter(Avatar avatar) {
+        avatar.setFetterLevel(10);
     }
 
     public void getProps() {
