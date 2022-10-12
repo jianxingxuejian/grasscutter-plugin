@@ -10,6 +10,7 @@ import emu.grasscutter.game.player.Player;
 import emu.grasscutter.game.props.PlayerProperty;
 import emu.grasscutter.game.world.Scene;
 import emu.grasscutter.game.world.World;
+import emu.grasscutter.server.packet.send.PacketAvatarFetterDataNotify;
 import emu.grasscutter.server.packet.send.PacketEntityFightPropUpdateNotify;
 import emu.grasscutter.server.packet.send.PacketSceneEntityAppearNotify;
 import emu.grasscutter.utils.Position;
@@ -201,19 +202,23 @@ public final class PluginHandler {
             for (Avatar avatar : player.getAvatars()) {
                 flag = levelUpConstellation(avatar);
                 levelUpSkill(avatar);
-                levelUpFetter(avatar);
+                levelUpFetter(player,avatar);
+                avatar.save();
             }
         } else if (type == 1) {
             for (Avatar avatar : player.getAvatars()) {
                 flag = levelUpConstellation(avatar);
+                avatar.save();
             }
         } else if (type == 2) {
             for (Avatar avatar : player.getAvatars()) {
                 levelUpSkill(avatar);
+                avatar.save();
             }
         } else if (type == 3) {
             for (Avatar avatar : player.getAvatars()) {
-                levelUpFetter(avatar);
+                levelUpFetter(player,avatar);
+                avatar.save();
             }
         }
 
@@ -268,8 +273,9 @@ public final class PluginHandler {
         }
     }
 
-    private void levelUpFetter(Avatar avatar) {
+    private void levelUpFetter(Player player,Avatar avatar) {
         avatar.setFetterLevel(10);
+        player.sendPacket(new PacketAvatarFetterDataNotify(avatar));
     }
 
     public void getProps() {
