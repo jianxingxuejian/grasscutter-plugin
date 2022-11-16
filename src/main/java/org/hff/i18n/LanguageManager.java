@@ -13,7 +13,7 @@ public final class LanguageManager {
 
     private static final Locale[] locales = Locale.class.getEnumConstants();
 
-    private static final Locale defaultLocale = Locale.zh_CN;
+    private static final Locale defaultLocale = Locale.en;
 
     public static void register() {
         for (Locale locale : locales) {

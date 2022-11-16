@@ -7,9 +7,10 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum Locale {
 
+    en("en"),
+
     zh_CN("zh-CN"),
 
-    en_US("en-US"),
     ;
 
     private final String desc;
