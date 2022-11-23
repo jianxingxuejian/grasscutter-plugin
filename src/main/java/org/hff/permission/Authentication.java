@@ -27,9 +27,7 @@ public class Authentication implements AuthenticationSystem {
     }
 
     @Override
-    public void resetPassword(String username) {
-
-    }
+    public void resetPassword(String username) {}
 
     @Override
     public Account verifyUser(String s) {

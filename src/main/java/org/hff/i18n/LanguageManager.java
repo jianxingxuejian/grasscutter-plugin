@@ -21,10 +21,6 @@ public final class LanguageManager {
         }
     }
 
-    public static Language getLanguage(Locale locale) {
-        return languageMap.get(locale);
-    }
-
     public static String getMsg(Locale locale, ApiCode code) {
         return languageMap.get(locale).getMsg(code);
     }

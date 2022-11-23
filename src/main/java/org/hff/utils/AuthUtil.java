@@ -2,8 +2,6 @@ package org.hff.utils;
 
 import emu.grasscutter.utils.FileUtils;
 import emu.grasscutter.utils.Utils;
-import org.hff.Config;
-import org.hff.MyPlugin;
 
 import javax.crypto.Cipher;
 import java.nio.charset.StandardCharsets;
@@ -14,14 +12,8 @@ import java.util.UUID;
 
 public class AuthUtil {
 
-    private static final Config config = MyPlugin.getInstance().getConfig();
-
     public static String generateAdminVoucher() {
         return UUID.randomUUID().toString();
-    }
-
-    public static boolean checkAdminVoucher(String voucher) {
-        return config.getAdminVoucher().equals(voucher);
     }
 
     public static String decryptPassword(String password) throws Exception {
