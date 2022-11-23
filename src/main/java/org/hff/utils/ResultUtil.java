@@ -54,7 +54,7 @@ public class ResultUtil {
 
     public static boolean checkAdminVoucherFail(String voucher, Context ctx) {
         boolean equals = config.getAdminVoucher().equals(voucher);
-        if (equals) {
+        if (!equals) {
             ctx.json(ApiResult.result(ApiCode.AUTH_FAIL, ctx));
             return true;
         }
