@@ -1,5 +1,6 @@
 package org.hff;
 
+import emu.grasscutter.command.CommandMap;
 import emu.grasscutter.data.excels.AvatarSkillDepotData;
 import emu.grasscutter.database.DatabaseHelper;
 import emu.grasscutter.game.Account;
@@ -70,11 +71,18 @@ public final class PluginHandler {
 
     public static void seed(Context ctx) {
         if (checkAdminFail(ctx)) return;
+        Claims claims = parsePlayerToken(ctx);
+        if (claims == null) return;
 
         SeedParam param = ctx.bodyAsClass(SeedParam.class);
         if (checkParamFail(param, ctx)) return;
 
-        invokeCommand(null, "windy " + param.getContents(), "admin", ctx);
+        String accountId = claims.get("accountId").toString();
+        Player player = getPlayerByAccountId(accountId, ctx);
+        if (player == null) return;
+
+        CommandMap.getInstance().invoke(player, player, "windy " + param.getContents());
+        ctx.json(ApiResult.success(ctx));
     }
 
     public static void mailVerifyCode(Context ctx) {

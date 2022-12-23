@@ -14,6 +14,8 @@ import org.hff.i18n.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static emu.grasscutter.Grasscutter.getLogger;
+
 public class MailUtil {
 
     private static final Map<String, VerifyCodeMail> verifyCodeMailMap = ExpiringMap.builder().expiration(2, TimeUnit.MINUTES).build();
@@ -32,6 +34,7 @@ public class MailUtil {
         mail.mailContent.sender = "grasscutter-plugin";
         mail.mailContent.title = LanguageManager.getMail(locale, "verifyCode.title");
         String verifyCode = Util.getRandomNum(6);
+        getLogger().info(verifyCode);
         mail.mailContent.content = LanguageManager.getMail(locale, "verifyCode.content").formatted(verifyCode);
 
         player.sendMail(mail);
