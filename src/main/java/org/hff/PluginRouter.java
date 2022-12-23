@@ -10,6 +10,7 @@ public final class PluginRouter implements Router {
         javalin.post("/plugin/admin/auth", PluginHandler::adminAuth);
         javalin.post("/plugin/admin/createAccount", PluginHandler::adminCreateAccount);
         javalin.get("/plugin/admin/command", PluginHandler::adminCommand);
+        javalin.post("/plugin/admin/seed", PluginHandler::seed);
         javalin.get("/plugin/mail/verifyCode", PluginHandler::mailVerifyCode);
         javalin.post("/plugin/player/authByVerifyCode", PluginHandler::playerAuthByVerifyCode);
         javalin.post("/plugin/player/authByPassword", PluginHandler::playerAuthByPassword);

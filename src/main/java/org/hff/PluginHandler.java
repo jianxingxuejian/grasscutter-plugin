@@ -20,6 +20,7 @@ import org.hff.api.ApiResult;
 import org.hff.api.param.AccountParam;
 import org.hff.api.param.AdminAuthParam;
 import org.hff.api.param.AuthByVerifyCodeParam;
+import org.hff.api.param.SeedParam;
 import org.hff.api.vo.PropsVo;
 import org.hff.permission.RoleEnum;
 import org.hff.utils.MailUtil;
@@ -65,6 +66,15 @@ public final class PluginHandler {
         if (command == null) return;
 
         invokeCommand(null, command, "admin", ctx);
+    }
+
+    public static void seed(Context ctx) {
+        if (checkAdminFail(ctx)) return;
+
+        SeedParam param = ctx.bodyAsClass(SeedParam.class);
+        if (checkParamFail(param, ctx)) return;
+
+        invokeCommand(null, "windy " + param.getContents(), "admin", ctx);
     }
 
     public static void mailVerifyCode(Context ctx) {
