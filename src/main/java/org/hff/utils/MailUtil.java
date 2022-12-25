@@ -18,7 +18,7 @@ import static emu.grasscutter.Grasscutter.getLogger;
 
 public class MailUtil {
 
-    private static final Map<String, VerifyCodeMail> verifyCodeMailMap = ExpiringMap.builder().expiration(2, TimeUnit.MINUTES).build();
+    public static final Map<String, VerifyCodeMail> verifyCodeMailMap = ExpiringMap.builder().expiration(2, TimeUnit.MINUTES).build();
 
     public static boolean sendVerifyCodeMail(Player player, Context ctx) {
         Locale locale = LanguageManager.getLocale(ctx.req.getHeader("locale"));
@@ -73,7 +73,7 @@ public class MailUtil {
 
     @Getter
     @Setter
-    static class VerifyCodeMail {
+    public static class VerifyCodeMail {
         private String verifyCode;
         private long expireTime;
         private int Retries = 3;

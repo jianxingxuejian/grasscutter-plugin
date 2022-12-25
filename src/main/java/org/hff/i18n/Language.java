@@ -2,6 +2,7 @@ package org.hff.i18n;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import emu.grasscutter.game.Account;
 import emu.grasscutter.utils.Utils;
 import org.hff.MyPlugin;
 import org.hff.api.ApiCode;
@@ -60,4 +61,11 @@ public final class Language {
         this.mailData = jsonObject.getAsJsonObject("mail");
     }
 
+    public static Locale getLocale(Account account) {
+        if ("zh".equals(account.getLocale().getLanguage())) {
+            return Locale.zh_CN;
+        } else {
+            return Locale.en;
+        }
+    }
 }

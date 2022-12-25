@@ -8,6 +8,7 @@ import emu.grasscutter.plugin.Plugin;
 import emu.grasscutter.server.event.EventHandler;
 import emu.grasscutter.server.event.HandlerPriority;
 import emu.grasscutter.server.event.game.ReceiveCommandFeedbackEvent;
+import org.hff.command.VerifyCommand;
 import org.hff.i18n.LanguageManager;
 import org.hff.permission.Authentication;
 
@@ -48,6 +49,8 @@ public final class MyPlugin extends Plugin {
         getHandle().addRouter(PluginRouter.class);
 
         Grasscutter.setAuthenticationSystem(new Authentication());
+
+        getHandle().registerCommand(new VerifyCommand());
 
         getLogger().info("grasscutter-plugin enabled");
     }
