@@ -7,9 +7,7 @@ import emu.grasscutter.game.player.Player;
 import io.javalin.http.Context;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
-import org.hff.Config;
 import org.hff.EventListeners;
-import org.hff.MyPlugin;
 import org.hff.api.ApiCode;
 import org.hff.api.ApiResult;
 import org.hff.permission.RoleEnum;
@@ -18,10 +16,9 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Field;
 
 import static emu.grasscutter.Grasscutter.getGameServer;
+import static org.hff.MyPlugin.config;
 
 public class ResultUtil {
-
-    private static final Config config = MyPlugin.getInstance().getConfig();
 
     public static boolean checkParamFail(Object param, Context ctx) {
         if (param == null) {

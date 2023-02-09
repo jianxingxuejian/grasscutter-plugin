@@ -2,6 +2,7 @@
   "msg": {
     "200": "success",
     "400": "fail",
+    "1000": "token generate fail",
     "1001": "token error",
     "1002": "token expired",
     "1003": "token parse fail",

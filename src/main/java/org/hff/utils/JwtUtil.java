@@ -6,8 +6,6 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.io.Encoders;
 import io.jsonwebtoken.security.Keys;
-import org.hff.Config;
-import org.hff.MyPlugin;
 import org.hff.permission.RoleEnum;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,10 +14,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.hff.MyPlugin.config;
+
 
 public class JwtUtil {
-
-    private static final Config config = MyPlugin.getInstance().getConfig();
 
     public static String generateToken(@NotNull RoleEnum role, @NotNull String accountId) {
         long jwtExpire = config.getJwtExpire();

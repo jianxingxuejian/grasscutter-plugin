@@ -25,7 +25,7 @@ public final class MyPlugin extends Plugin {
     private static MyPlugin instance;
 
     private File configFile;
-    private Config config;
+    public static Config config;
 
     public static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
@@ -86,10 +86,6 @@ public final class MyPlugin extends Plugin {
 
     public static MyPlugin getInstance() {
         return instance;
-    }
-
-    public Config getConfig() {
-        return config;
     }
 
     public void saveConfigFile() {
