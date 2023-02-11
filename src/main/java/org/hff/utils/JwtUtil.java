@@ -1,8 +1,6 @@
 package org.hff.utils;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.io.Encoders;
 import io.jsonwebtoken.security.Keys;
@@ -19,6 +17,11 @@ import static org.hff.MyPlugin.config;
 
 public class JwtUtil {
 
+    static JwtBuilder jwtBuilder = Jwts.builder()
+            .setIssuer("grasscutter-plugin")
+            .setSubject("grasscutter-tools");
+    static JwtParserBuilder jwtParserBuilder = Jwts.parserBuilder();
+
     public static String generateToken(@NotNull RoleEnum role, @NotNull String accountId) {
         long jwtExpire = config.getJwtExpire();
 
@@ -30,9 +33,7 @@ public class JwtUtil {
         claims.put("role", role.getDesc());
         claims.put("accountId", accountId);
 
-        return Jwts.builder()
-                .setIssuer("grasscutter-plugin")
-                .setSubject("grasscutter-tools")
+        return jwtBuilder
                 .setIssuedAt(now)
                 .setExpiration(expireDate)
                 .setClaims(claims)
@@ -41,7 +42,7 @@ public class JwtUtil {
     }
 
     public static Claims parseToken(@NotNull String token) {
-        return Jwts.parserBuilder()
+        return jwtParserBuilder
                 .setSigningKey(getKey())
                 .build()
                 .parseClaimsJws(token)
