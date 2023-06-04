@@ -6,13 +6,13 @@
 
     <groupId>org.hff</groupId>
     <artifactId>grasscutter-plugin</artifactId>
-    <version>1.5.4</version>
+    <version>1.6.0</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <grasscutter.version>1.4.6</grasscutter.version>
+        <grasscutter.version>1.6.1</grasscutter.version>
         <jjwt.version>0.11.5</jjwt.version>
         <expiringMap.version>0.5.10</expiringMap.version>
         <lombok.version>1.18.24</lombok.version>

@@ -61,7 +61,7 @@ public final class ApiResult {
     }
 
     private static String getMessage(Context ctx, ApiCode code) {
-        Locale locale = LanguageManager.getLocale(ctx.req.getHeader("locale"));
+        Locale locale = LanguageManager.getLocale(ctx.req().getHeader("locale"));
         return LanguageManager.getMsg(locale, code);
     }
 

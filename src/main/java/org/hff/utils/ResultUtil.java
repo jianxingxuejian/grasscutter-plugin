@@ -59,7 +59,7 @@ public class ResultUtil {
     }
 
     public static boolean checkAdminFail(Context ctx) {
-        String adminToken = ctx.req.getHeader("admin_token");
+        String adminToken = ctx.req().getHeader("admin_token");
         if (adminToken == null) {
             ctx.json(ApiResult.result(ApiCode.TOKEN_NOT_FOUND, ctx));
             return true;
@@ -85,7 +85,7 @@ public class ResultUtil {
     }
 
     public static Claims parsePlayerToken(Context ctx) {
-        String token = ctx.req.getHeader("token");
+        String token = ctx.req().getHeader("token");
         if (token == null) {
             ctx.json(ApiResult.result(ApiCode.TOKEN_NOT_FOUND, ctx));
             return null;

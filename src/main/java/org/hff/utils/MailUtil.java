@@ -21,7 +21,7 @@ public class MailUtil {
     public static final Map<String, VerifyCodeMail> verifyCodeMailMap = ExpiringMap.builder().expiration(2, TimeUnit.MINUTES).build();
 
     public static boolean sendVerifyCodeMail(Player player, Context ctx) {
-        Locale locale = LanguageManager.getLocale(ctx.req.getHeader("locale"));
+        Locale locale = LanguageManager.getLocale(ctx.req().getHeader("locale"));
 
         String accountId = player.getAccount().getId();
         VerifyCodeMail oldMail = verifyCodeMailMap.get(accountId);

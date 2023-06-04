@@ -1,19 +1,19 @@
 package org.hff;
 
 import emu.grasscutter.command.CommandMap;
-import emu.grasscutter.data.excels.AvatarSkillDepotData;
+import emu.grasscutter.data.excels.avatar.AvatarSkillDepotData;
 import emu.grasscutter.database.DatabaseHelper;
 import emu.grasscutter.game.Account;
 import emu.grasscutter.game.avatar.Avatar;
 import emu.grasscutter.game.entity.EntityAvatar;
 import emu.grasscutter.game.player.Player;
 import emu.grasscutter.game.props.PlayerProperty;
+import emu.grasscutter.game.world.Position;
 import emu.grasscutter.game.world.Scene;
 import emu.grasscutter.game.world.World;
 import emu.grasscutter.server.packet.send.PacketAvatarFetterDataNotify;
 import emu.grasscutter.server.packet.send.PacketEntityFightPropUpdateNotify;
 import emu.grasscutter.server.packet.send.PacketSceneEntityAppearNotify;
-import emu.grasscutter.utils.Position;
 import io.javalin.http.Context;
 import io.jsonwebtoken.Claims;
 import org.hff.api.ApiCode;
@@ -210,6 +210,7 @@ public final class PluginHandler {
 
     private static void levelUpSkill(Avatar avatar) {
         AvatarSkillDepotData skillDepot = avatar.getSkillDepot();
+        assert skillDepot != null;
         Integer skillIdN = skillDepot.getSkills().get(0);
         Integer skillIdE = skillDepot.getSkills().get(1);
         int skillIdQ = skillDepot.getEnergySkill();
@@ -244,10 +245,11 @@ public final class PluginHandler {
         Avatar avatar = player.getTeamManager().getCurrentAvatarEntity().getAvatar();
         Map<Integer, Integer> skillLevelMap = avatar.getSkillLevelMap();
         AvatarSkillDepotData skillDepot = avatar.getSkillDepot();
+        assert skillDepot != null;
         PropsVo propsVo = new PropsVo();
-        propsVo.setInGodMode(player.inGodmode())
-                .setUnLimitedStamina(player.getUnlimitedStamina())
-                .setUnLimitedEnergy(!player.getEnergyManager().getEnergyUsage())
+        propsVo.setInGodMode(player.isInGodMode())
+                .setUnLimitedStamina(player.isUnlimitedStamina())
+                .setUnLimitedEnergy(!player.getEnergyManager().isEnergyUsage())
                 .setWorldLevel(player.getWorldLevel())
                 .setBpLevel(player.getBattlePassManager().getLevel())
                 .setTowerLevel(player.getTowerManager().getRecordMap().size())
